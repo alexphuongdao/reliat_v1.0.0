@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Env
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Claude Code session-local settings (keep .claude/settings.json — project config)
+.claude/settings.local.json
