@@ -1,0 +1,50 @@
+/**
+ * Domain types — mirror the shapes the original screens read from
+ * `window.ReliatData` and the FastAPI responses. Field names are
+ * camelCase because that's what the design code already consumes.
+ */
+
+export type Severity = "critical" | "warn" | "info";
+export type OutlierStatus = "open" | "acknowledged" | "resolved" | "dismissed";
+
+export interface Channel {
+  id: string;
+  name: string;
+  belt: string;
+  color: string;            // CSS color or var() string, e.g. "var(--ch-1)"
+  baseF80: number;
+  baseTopsize: number;
+  online: boolean;
+  shift: string;
+}
+
+export interface SeriesPoint {
+  t: number;                                 // epoch ms
+  v: number;                                 // measurement value
+  outlier: { sev: Severity; deviation: number } | null;
+  color: string;                             // hsl(...) string
+}
+
+export interface PsdPercentile { name: string; x: number; y: number }
+export interface PsdSieve { size: number; passing: number }
+export interface PsdSnapshot { pcts: PsdPercentile[]; sieves: PsdSieve[] }
+
+export interface Outlier {
+  id: string;
+  channelId: string;
+  channelName: string;
+  t: number;
+  metric: string;
+  unit: string;
+  value: number;
+  baseline: number;
+  deviation: number;
+  sev: Severity;
+  type: string;
+  confidence: number;
+  status: OutlierStatus;
+  assignee: string | null;
+  summary: string;
+  action: string;
+  indexInSeries: number;
+}
