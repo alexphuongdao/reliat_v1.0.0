@@ -1,11 +1,11 @@
-# reliat-backend
+# reliat — api
 
-FastAPI service that feeds the locked frontend in `/frontend`. Two screens are live in v1.0.0: **Outliers** and **Channels**.
+FastAPI service. Feeds the original prototype in `/frontend` and (in-flight) the Next.js app under `/apps/web`. Two screens are live in v1.0.0: **Outliers** and **Channels**.
 
 ## Quick start (SQLite — zero infra)
 
 ```bash
-cd backend
+cd services/api
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 uvicorn app.main:app --reload --port 8000
@@ -18,13 +18,15 @@ The first run auto-creates `reliat.db` and seeds 24h of measurements for 12 chan
 - http://localhost:8000/api/channels
 - http://localhost:8000/api/outliers
 
-## Pointing the frontend at it
+## Pointing a client at it
 
-Open `frontend/Reliat v1.html`. `data.jsx` reads `RELIAT_API_BASE` from `window` (default `http://localhost:8000`) and populates `window.ReliatData` from the API. If the API is unreachable it falls back to the mock substrate so the design still renders.
+**Prototype** (`/frontend/Reliat v1.html`): `data.jsx` reads `RELIAT_API_BASE` from `window` (default `http://localhost:8000`) and populates `window.ReliatData` from the API. If the API is unreachable it falls back to the mock substrate so the design still renders. Serve it over HTTP (not `file://`): `cd frontend && python3 -m http.server 5173`.
+
+**Next.js app** (`/apps/web`, in-flight): set `NEXT_PUBLIC_API_BASE` in `apps/web/.env.local`. CORS already wide open in dev.
 
 ## Ingesting real data
 
-Drop a CSV/TSV at `backend/sample_data.tsv` with columns:
+Drop a CSV/TSV at `services/api/sample_data.tsv` with columns:
 
 ```
 channel_id  ts  F10  F20  F30  F40  F50  F60  F70  F80  F90  topsize  color_hue  color_sat  color_light  [sieve_<size>_passing …]

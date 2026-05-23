@@ -1,0 +1,181 @@
+/* Reliat — Design Tokens
+   Dark-mode primary. Solid surface hierarchy. Glass reserved for floating overlays. */
+
+:root {
+  /* — Surface (deep blue-black, warm-cool hierarchy) — */
+  --surface-0: #0B0D10;          /* page bg */
+  --surface-1: #14171C;          /* panels */
+  --surface-2: #1B1F26;          /* elevated panels */
+  --surface-3: #232832;          /* top-most, hover */
+  --surface-inset: #0E1116;      /* inset / well */
+
+  /* — Borders & dividers — */
+  --border:        rgba(255, 255, 255, 0.065);
+  --border-strong: rgba(255, 255, 255, 0.105);
+  --border-bright: rgba(255, 255, 255, 0.18);
+
+  /* — Text — */
+  --text-1: #ECEFF4;             /* primary */
+  --text-2: #BCC4D2;             /* secondary */
+  --text-3: #8A93A1;             /* muted */
+  --text-4: #5E6776;             /* dim / disabled */
+
+  /* — Accent (confident teal — distinct from semantic blue) — */
+  --accent:        #4ABFCF;
+  --accent-bright: #74D6E2;
+  --accent-dim:    rgba(74, 191, 207, 0.14);
+  --accent-line:   rgba(74, 191, 207, 0.32);
+
+  /* — Semantic outlier palette (reserved — never decorative) — */
+  --sev-info:      #5B8FFF;
+  --sev-info-dim:  rgba(91, 143, 255, 0.16);
+  --sev-warn:      #F0A848;
+  --sev-warn-dim:  rgba(240, 168, 72, 0.16);
+  --sev-crit:      #F26E6E;
+  --sev-crit-dim:  rgba(242, 110, 110, 0.18);
+
+  /* — Channel categorical (8 visible, 4 reserve) — colorblind-aware — */
+  --ch-1:  #6FB1FC;  /* blue */
+  --ch-2:  #C390E6;  /* violet */
+  --ch-3:  #FFB58A;  /* salmon */
+  --ch-4:  #76D9B6;  /* mint */
+  --ch-5:  #E0A0CA;  /* pink */
+  --ch-6:  #F0C964;  /* yellow */
+  --ch-7:  #8BA2DB;  /* indigo */
+  --ch-8:  #B0D38A;  /* lime */
+  --ch-9:  #E89BB0;  /* rose */
+  --ch-10: #9EE0DE;  /* aqua */
+  --ch-11: #D9B380;  /* sand */
+  --ch-12: #B6B6CC;  /* slate */
+
+  /* — Glass (for overlays only) — */
+  --glass-bg:     rgba(20, 23, 28, 0.72);
+  --glass-bg-2:   rgba(27, 31, 38, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-blur:   blur(18px) saturate(140%);
+
+  /* — Typography — */
+  --font-sans: var(--font-geist-sans), 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --fs-micro: 10.5px;
+  --fs-xs:    11.5px;
+  --fs-sm:    12.5px;
+  --fs-md:    13.5px;
+  --fs-lg:    15px;
+  --fs-xl:    20px;
+  --fs-xxl:   28px;
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+  --tabular: "tnum" 1, "lnum" 1, "ss01" 1, "cv11" 1;
+
+  /* — Radius (never larger than 14) — */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* — Shadow (reserved for true elevation) — */
+  --shadow-pop: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 10px 30px -8px rgba(0,0,0,0.5),
+                0 4px 12px -4px rgba(0,0,0,0.4);
+  --shadow-modal: 0 1px 0 rgba(255,255,255,0.05) inset,
+                  0 30px 80px -16px rgba(0,0,0,0.6),
+                  0 10px 24px -8px rgba(0,0,0,0.4);
+
+  /* — Motion (functional only) — */
+  --t-instant: 80ms;
+  --t-fast:    140ms;
+  --t-med:     220ms;
+  --ease:      cubic-bezier(0.2, 0.6, 0.2, 1);
+
+  /* — Layout — */
+  --rail-w: 240px;
+  --rail-w-collapsed: 56px;
+  --topbar-h: 48px;
+  --drawer-w: 45%;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-feature-settings: var(--tabular);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+#root { height: 100vh; overflow: hidden; }
+
+/* tabular numerals everywhere a number appears */
+.num, td.num, th.num, .mono, .tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: var(--tabular);
+}
+.mono { font-family: var(--font-mono); }
+
+button { font-family: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+input, textarea, select { font-family: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+
+/* Focus — 2px accent outline, 2px offset, visible only on keyboard */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* scrollbars — minimal */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* — Utility primitives used widely — */
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.panel-2 {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.hairline { border-top: 1px solid var(--border); }
+.hairline-l { border-left: 1px solid var(--border); }
+.row { display: flex; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.gap-1 { gap: 4px; } .gap-2 { gap: 8px; } .gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; } .gap-5 { gap: 20px; } .gap-6 { gap: 24px; }
+.flex-1 { flex: 1; }
+.muted { color: var(--text-3); }
+.dim { color: var(--text-4); }
+.secondary { color: var(--text-2); }
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}

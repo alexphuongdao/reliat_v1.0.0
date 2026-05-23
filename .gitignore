@@ -18,6 +18,18 @@ dist/
 .env
 .env.local
 
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+.pnpm-store/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Editor
 .vscode/
 .idea/

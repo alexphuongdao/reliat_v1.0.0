@@ -1,0 +1,9 @@
+/* Reliat — global stylesheet.
+ *
+ * Loads the canonical design tokens (mirrored from /frontend/tokens.css, the
+ * locked source of truth) and lets the tokens drive everything from there.
+ * Nothing else lives in this file — per-component styles stay inline
+ * (matching the design's existing idiom) or move to CSS Modules later when
+ * a `:hover` / `@media` rule needs them.
+ */
+@import "../styles/tokens.css";
