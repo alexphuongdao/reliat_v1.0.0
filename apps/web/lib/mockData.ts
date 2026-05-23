@@ -7,7 +7,14 @@
  * Deterministic by design — Mulberry32 seeded from channel id so the
  * rendered shape is stable between reloads.
  */
-import type { Channel, Outlier, SeriesPoint, Severity } from "./types";
+import type {
+  AgentTurnMsg,
+  Channel,
+  Command,
+  Outlier,
+  SeriesPoint,
+  Severity,
+} from "./types";
 
 function rng(seed: number): () => number {
   let t = seed >>> 0;
@@ -115,7 +122,62 @@ export interface MockSubstrate {
   channels: Channel[];
   series: Record<string, SeriesPoint[]>;
   outliers: Outlier[];
+  agentThread: AgentTurnMsg[];
+  shiftSummary: string;
+  commands: Command[];
 }
+
+// ─── Agent thread seed (one prefilled Q&A — matches the original) ───
+function buildAgentThread(now: number): AgentTurnMsg[] {
+  return [
+    {
+      role: "user",
+      content: "Why did CV42 Tunnel spike at 02:47 this morning?",
+      t: now - 1000 * 60 * 32,
+    },
+    {
+      role: "agent",
+      t: now - 1000 * 60 * 31,
+      answer: [
+        "CV42 Tunnel's Topsize crossed the upper alarm band at 02:47:14 and held there for 4m 12s. The deviation was 3.6σ above the trailing 7-day baseline for the same shift slot.",
+        "This is consistent with a feed pulse from CV51 Reclaim, not the upstream crusher — the timing aligns with the reclaim feeder ramp at 02:46:51 and the PSD shape (F80↑, F10 flat) matches reclaim signatures from 11 prior events this quarter.",
+        "Downstream effect, predicted: SAG mill draw on CV28 will rise ~6% over the next 18–24 minutes. CV28 is currently offline for scheduled service so the effect is absorbed.",
+      ],
+      refs: [
+        { kind: "outlier", id: "OUT-1L" },
+        { kind: "channel", id: "cv51" },
+      ],
+      evidence: [
+        { tool: "series.query", args: "channel=cv42 metric=Topsize window=02:30..03:00", rows: 1840 },
+        { tool: "baseline.compare", args: "channel=cv42 metric=Topsize lookback=7d match=shift", sigma: 3.6 },
+        { tool: "similar.vector_search", args: "embed(OUT-1L) k=20 filter=channel=cv42", returned: 11 },
+        { tool: "cascade.predict", args: "origin=cv42 horizon=30m", confidence: 0.81 },
+      ],
+      followups: [
+        "Show the 11 similar past events on CV42.",
+        "What did we do last time CV51 caused this?",
+        "Is the SAG service window still on schedule?",
+      ],
+    },
+  ];
+}
+
+const SHIFT_SUMMARY =
+  "Shift A is 4h 12m in. Throughput tracking 3.1% above the 7-day mean; CV42 Tunnel and CV33 Crusher Out account for 71% of feed. Three open outliers: one critical (CV09 ROM Topsize, 02:47), two warnings (CV66 Screening drift, CV51 Reclaim color shift). CV28 SAG Feed is offline for scheduled service; CV33 is absorbing the diverted load with no anomalies. Recommended attention: confirm CV09 ROM grizzly screen at next downtime — same outlier signature appeared on three prior shifts this week.";
+
+const STATIC_COMMANDS: Command[] = [
+  { id: "go.pulse",     label: "Go to Pulse",            kind: "Navigate", shortcut: "G P", surface: "pulse" },
+  { id: "go.channels",  label: "Go to Channels",         kind: "Navigate", shortcut: "G C", surface: "channels" },
+  { id: "go.outliers",  label: "Go to Outliers",         kind: "Navigate", shortcut: "G O", surface: "outliers" },
+  { id: "go.agent",     label: "Go to Agent",            kind: "Navigate", shortcut: "G A", surface: "agent" },
+  { id: "go.library",   label: "Go to Library",          kind: "Navigate", shortcut: "G L", surface: "library" },
+  { id: "go.notes",     label: "Open Design Notes",      kind: "Navigate", surface: "notes" },
+  { id: "agent.toggle", label: "Toggle Agent drawer",    kind: "Action", shortcut: "⌘J" },
+  { id: "theme.toggle", label: "Toggle density: compact",kind: "Preference" },
+  { id: "view.shift",   label: "Open saved view: Shift handoff", kind: "Saved view" },
+  { id: "view.crit",    label: "Open saved view: Critical only", kind: "Saved view" },
+  { id: "kbd.help",     label: "Show keyboard shortcuts",kind: "Help", shortcut: "?" },
+];
 
 /**
  * Build the mock substrate. Pass `now` to make it deterministic
@@ -161,5 +223,12 @@ export function buildMock(now: number = 0): MockSubstrate {
     });
   }
   outliers.sort((a, b) => b.t - a.t);
-  return { channels, series, outliers };
+  return {
+    channels,
+    series,
+    outliers,
+    agentThread: buildAgentThread(stamp),
+    shiftSummary: SHIFT_SUMMARY,
+    commands: STATIC_COMMANDS,
+  };
 }

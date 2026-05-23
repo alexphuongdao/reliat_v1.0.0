@@ -48,3 +48,45 @@ export interface Outlier {
   action: string;
   indexInSeries: number;
 }
+
+// ─── Agent ──────────────────────────────────────────────────────────
+export interface AgentRef {
+  kind: "outlier" | "channel";
+  id: string;
+}
+
+// Heterogeneous evidence rows — every entry has tool + args, plus an
+// arbitrary set of named result fields (rows, sigma, returned, …).
+export interface AgentEvidence {
+  tool: string;
+  args: string;
+  [k: string]: string | number | boolean | undefined;
+}
+
+export interface UserTurn {
+  role: "user";
+  t: number;
+  content: string;
+}
+
+export interface AgentReply {
+  role: "agent";
+  t: number;
+  answer: string[];
+  refs?: AgentRef[];
+  evidence: AgentEvidence[];
+  followups?: string[];
+}
+
+export type AgentTurnMsg = UserTurn | AgentReply;
+
+// ─── Command palette ────────────────────────────────────────────────
+export interface Command {
+  id: string;
+  label: string;
+  kind: string;
+  shortcut?: string;
+  surface?: string;
+  channelId?: string;
+  outlierId?: string;
+}
