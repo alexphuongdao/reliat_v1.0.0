@@ -50,6 +50,35 @@ uvicorn app.main:app --reload --port 8000
 
 The schema is portable — no SQLite-specific code. The migration to Timescale hypertables for `measurements` and to `pgvector` for outlier embeddings is the next planned step (not required to render the two v1.0.0 screens).
 
+## Deploying to Railway (recommended for v1.0.0)
+
+The repo ships a `Dockerfile` Railway will detect automatically.
+
+1. **Create the DB first** — sign up at [neon.tech](https://neon.tech), create a project, copy the connection string. Make sure to convert the URL prefix to `postgresql+psycopg://` (SQLAlchemy's driver name) — Neon hands you `postgresql://` by default.
+
+2. **Create a Railway service from the GitHub repo**:
+   - Root directory: `services/api`
+   - Builder: Dockerfile (auto-detected)
+
+3. **Set environment variables** in Railway:
+   ```
+   RELIAT_DATABASE_URL=postgresql+psycopg://<user>:<pwd>@<host>/<db>?sslmode=require
+   RELIAT_CORS_ORIGINS=https://<your-app>.vercel.app
+   RELIAT_SEED_ON_STARTUP=false
+   ```
+   Don't seed the prod DB with mock data — keep `seed_on_startup` off.
+
+4. Railway sets `$PORT` automatically; the Dockerfile `CMD` reads it.
+
+5. Verify: `curl https://<your-railway-url>/api/health` → `{"ok": true, ...}`.
+
+6. Wire the frontend: in Vercel, set `NEXT_PUBLIC_API_BASE` to the Railway URL.
+
+### Why this stack
+- **Compute on Railway**: $5/mo hobby plan, git-push-to-deploy, Dockerfile-driven, restart-on-crash, logs in the UI.
+- **DB on Neon**: free tier, pgvector built in, decoupled so you can move compute later without touching data.
+- **Render** works the same way if you prefer it — same Dockerfile, same env vars.
+
 ## Architecture
 
 ```
