@@ -16,7 +16,9 @@ import type {
   Outlier,
 } from "../../lib/types";
 
-export type AgentScope = Channel | string | { name: string } | null | undefined;
+// Permissive — any object with optional .name (Channel, Outlier) plus
+// bare strings ("outliers", "shift", …) and null/undefined.
+export type AgentScope = { name?: string } | string | null | undefined;
 
 export interface AgentScreenProps {
   channels: Channel[];
