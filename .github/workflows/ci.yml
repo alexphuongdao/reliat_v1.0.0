@@ -1,0 +1,54 @@
+name: CI
+
+# Build gate: runs before code reaches the production branch (main),
+# so broken builds never trigger a Railway/Vercel deploy.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  web:
+    name: web build (apps/web)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # `next build` runs the TypeScript + lint checks too, so this one
+      # command is the whole front-end gate.
+      - run: pnpm build
+
+  api:
+    name: api import check (services/api)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install .
+
+      # Verifies the package installs and the app wires up (routes,
+      # settings, DB engine) without importing-time errors.
+      - run: python -c "from app.main import app; print('api import OK:', app.title)"
