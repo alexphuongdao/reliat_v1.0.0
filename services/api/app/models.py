@@ -1,12 +1,58 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class User(Base):
+    """A person who can sign in — via password or a linked OAuth provider.
+
+    Password and OAuth users share one row, keyed by email. `password_hash`
+    is null for OAuth-only accounts; `provider`/`provider_sub` are null for
+    password-only accounts. A user who later signs in with Google using the
+    same email is matched on email and the provider fields are filled in.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    # null for OAuth-only accounts
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # null for password-only accounts; identifies the external identity
+    provider: Mapped[str | None] = mapped_column(String(32), nullable=True)  # google|github
+    provider_sub: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_sub", name="uq_users_provider_identity"),
+    )
 
 
 class Channel(Base):

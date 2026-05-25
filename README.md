@@ -52,8 +52,10 @@ cd frontend && python3 -m http.server 5173
 | 0 — Restructure + Next.js scaffold | ✓ done | `services/api/`, `apps/web/` scaffolded, tokens.css + Geist wired, boot verified |
 | 1 — Visual parity (all screens) | ✓ done | All 6 screens, charts, app shell, routes, ⌘K palette, ⌘J drawer — pixel-faithful port |
 | 2.5 — Deploy prep | ✓ done | Dockerfile, env-driven CORS, typed API client in `apps/web/lib/api.ts`, deploy docs |
+| A — Auth backend | ✓ done | `users` table, password (bcrypt) + Google/GitHub OAuth (Authlib), JWT, gated routes |
+| B — Auth frontend | next | Login/Register screens (locked-design primitives), auth guard → login gate |
 | 2 — Componentize | | extract `ui/` per-component, split inline screen helpers |
-| 3 — API client + live data | | swap `buildMock()` for `api.*()` calls; outlier triage PATCH |
+| 3 — API client + live data | | swap `buildMock()` for authenticated `api.*()` calls; outlier triage PATCH |
 | 4 — Responsiveness | | mobile-web at 390/430 widths |
 | 5 — Capacitor prep | | manifest, safe areas, iOS webview audit |
 

@@ -46,9 +46,36 @@ class Settings(BaseSettings):
 
     seed_on_startup: bool = True
 
+    # --- auth ---------------------------------------------------------------
+    # Signs our JWT access tokens. MUST be overridden in prod with a strong
+    # random value: `openssl rand -hex 32`. The dev default is intentionally
+    # obvious so a leaked token from a dev box is worthless.
+    jwt_secret: str = "dev-only-insecure-secret-change-me-in-production-please"
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_minutes: int = 60 * 24 * 7  # 7 days
+
+    # Public base URLs. backend_url builds OAuth redirect_uri; frontend_url is
+    # where we bounce the browser after a successful OAuth login.
+    backend_url: str = "http://localhost:8000"
+    frontend_url: str = "http://localhost:3000"
+
+    # OAuth provider credentials (set per-provider; empty = provider disabled).
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    github_client_id: str = ""
+    github_client_secret: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [s.strip() for s in self.cors_origins.split(",") if s.strip()]
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def github_enabled(self) -> bool:
+        return bool(self.github_client_id and self.github_client_secret)
 
 
 settings = Settings()

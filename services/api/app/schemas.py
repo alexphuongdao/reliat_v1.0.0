@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ChannelOut(BaseModel):
@@ -69,3 +69,40 @@ class OutlierOut(BaseModel):
 class OutlierPatch(BaseModel):
     status: Literal["open", "acknowledged", "resolved", "dismissed"] | None = None
     assignee: str | None = None
+
+
+# --- auth -------------------------------------------------------------------
+
+
+class RegisterIn(BaseModel):
+    email: EmailStr
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    email: str
+    username: str
+    name: str | None = None
+    avatar_url: str | None = None
+    provider: str | None = None
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+class AuthProvidersOut(BaseModel):
+    google: bool
+    github: bool
+    password: bool = True

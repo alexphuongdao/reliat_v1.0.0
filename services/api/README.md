@@ -65,8 +65,26 @@ The repo ships a `Dockerfile` Railway will detect automatically.
    RELIAT_DATABASE_URL=<paste Neon's postgresql:// string as-is>
    RELIAT_CORS_ORIGINS=https://<your-app>.vercel.app
    RELIAT_SEED_ON_STARTUP=false
+
+   # auth
+   RELIAT_JWT_SECRET=<openssl rand -hex 32>
+   RELIAT_BACKEND_URL=https://<your-railway-app>.up.railway.app
+   RELIAT_FRONTEND_URL=https://<your-app>.vercel.app
+   RELIAT_GOOGLE_CLIENT_ID=<from Google Cloud console>
+   RELIAT_GOOGLE_CLIENT_SECRET=<from Google Cloud console>
+   RELIAT_GITHUB_CLIENT_ID=<from GitHub OAuth app>
+   RELIAT_GITHUB_CLIENT_SECRET=<from GitHub OAuth app>
    ```
    Don't seed the prod DB with mock data — keep `seed_on_startup` off.
+
+   **Auth notes.** Identity lives in the backend: password accounts (bcrypt)
+   and Google/GitHub OAuth (Authlib) share one `users` table, and every
+   sign-in returns a signed JWT the SPA sends as `Authorization: Bearer`.
+   Each OAuth provider only activates when both its `*_CLIENT_ID` and
+   `*_CLIENT_SECRET` are set, so you can ship password-only first and add
+   providers later. OAuth **redirect URIs** must be registered with each
+   provider as `${RELIAT_BACKEND_URL}/api/auth/{google,github}/callback`.
+   All routes except `/api/health` and `/api/auth/*` require a valid token.
 
 4. Railway sets `$PORT` automatically; the Dockerfile `CMD` reads it.
 
