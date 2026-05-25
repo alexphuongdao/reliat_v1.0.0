@@ -69,14 +69,14 @@ Deploy order: **DB → backend → frontend**. Each one needs the previous one's
 
 ### 1. Database — Neon
 
-Create a project at [neon.tech](https://neon.tech), copy the connection string, convert prefix to `postgresql+psycopg://` (SQLAlchemy driver name).
+Create a project at [neon.tech](https://neon.tech), copy the connection string, paste it as-is — the backend rewrites the `postgresql://` scheme to the psycopg driver automatically.
 
 ### 2. Backend — Railway
 
 - New service from GitHub repo, root directory `services/api`.
 - Env vars:
   ```
-  RELIAT_DATABASE_URL=postgresql+psycopg://<…>?sslmode=require
+  RELIAT_DATABASE_URL=<paste Neon's postgresql:// string as-is>
   RELIAT_CORS_ORIGINS=https://<your-vercel-app>.vercel.app
   RELIAT_SEED_ON_STARTUP=false
   ```

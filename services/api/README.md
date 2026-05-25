@@ -54,7 +54,7 @@ The schema is portable — no SQLite-specific code. The migration to Timescale h
 
 The repo ships a `Dockerfile` Railway will detect automatically.
 
-1. **Create the DB first** — sign up at [neon.tech](https://neon.tech), create a project, copy the connection string. Make sure to convert the URL prefix to `postgresql+psycopg://` (SQLAlchemy's driver name) — Neon hands you `postgresql://` by default.
+1. **Create the DB first** — sign up at [neon.tech](https://neon.tech), create a project, copy the connection string and paste it as-is. Neon hands you a `postgresql://…` URL; the app rewrites the scheme to the psycopg driver automatically (see `_use_psycopg_driver` in `app/config.py`), so no manual editing is needed.
 
 2. **Create a Railway service from the GitHub repo**:
    - Root directory: `services/api`
@@ -62,7 +62,7 @@ The repo ships a `Dockerfile` Railway will detect automatically.
 
 3. **Set environment variables** in Railway:
    ```
-   RELIAT_DATABASE_URL=postgresql+psycopg://<user>:<pwd>@<host>/<db>?sslmode=require
+   RELIAT_DATABASE_URL=<paste Neon's postgresql:// string as-is>
    RELIAT_CORS_ORIGINS=https://<your-app>.vercel.app
    RELIAT_SEED_ON_STARTUP=false
    ```

@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -5,7 +6,7 @@ class Settings(BaseSettings):
     """Backend settings — overridable via `RELIAT_*` env vars or a `.env` file.
 
     Production env on Railway/Render needs:
-      RELIAT_DATABASE_URL=postgresql+psycopg://<…>      # Neon connection string
+      RELIAT_DATABASE_URL=<Neon connection string, paste as-is>
       RELIAT_CORS_ORIGINS=https://<your-app>.vercel.app  # comma-separated for >1
       RELIAT_SEED_ON_STARTUP=false                       # don't seed prod DB
     """
@@ -13,6 +14,18 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="RELIAT_", extra="ignore")
 
     database_url: str = "sqlite:///./reliat.db"
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _use_psycopg_driver(cls, v: str) -> str:
+        # SQLAlchemy selects its DBAPI from the URL scheme. A bare
+        # `postgresql://` (what Neon/Heroku/etc. hand you) defaults to
+        # psycopg2, but we ship psycopg v3 — so rewrite the scheme. This
+        # lets you paste the provider's raw connection string unedited.
+        for bare in ("postgresql://", "postgres://"):
+            if v.startswith(bare):
+                return "postgresql+psycopg://" + v[len(bare):]
+        return v
 
     # Allowed origins for CORS, comma-separated. The default covers local
     # dev (Next dev server, Vite dev server, file:// pages). In prod set
