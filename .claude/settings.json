@@ -1,4 +1,15 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(git commit *)",
+      "Bash(git push origin *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Read(./.env)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,6 +18,17 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/frontend_design_lock.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run lint -- --fix"
           }
         ]
       }
