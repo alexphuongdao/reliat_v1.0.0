@@ -2,10 +2,10 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { OutliersScreen } from "../../components/screens/OutliersScreen";
-import { useAppShell } from "../../components/shell/context";
-import { buildMock } from "../../lib/mockData";
-import { STABLE_NOW } from "../../lib/now";
+import { OutliersScreen } from "../../../components/screens/OutliersScreen";
+import { useAppShell } from "../../../components/shell/context";
+import { buildMock } from "../../../lib/mockData";
+import { STABLE_NOW } from "../../../lib/now";
 
 const data = buildMock(STABLE_NOW);
 

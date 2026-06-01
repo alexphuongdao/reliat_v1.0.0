@@ -2,11 +2,11 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChannelsScreen } from "../../components/screens/ChannelsScreen";
-import { useAppShell } from "../../components/shell/context";
-import { buildMock } from "../../lib/mockData";
-import { STABLE_NOW } from "../../lib/now";
-import { psdAt as psdHelper } from "../../lib/psd";
+import { ChannelsScreen } from "../../../components/screens/ChannelsScreen";
+import { useAppShell } from "../../../components/shell/context";
+import { buildMock } from "../../../lib/mockData";
+import { STABLE_NOW } from "../../../lib/now";
+import { psdAt as psdHelper } from "../../../lib/psd";
 
 const data = buildMock(STABLE_NOW);
 

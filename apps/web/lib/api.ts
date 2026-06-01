@@ -11,6 +11,7 @@
  * schemas were designed to match these field names — no adapter layer
  * is needed).
  */
+import { clearToken, getToken } from "./auth";
 import type {
   Channel,
   Outlier,
@@ -23,8 +24,33 @@ const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * On 401, drop the dead token and send the user back to /login. The
+ * caller still gets a thrown error — guards/screens decide whether to
+ * surface it.
+ */
+function handle401(): void {
+  if (typeof window === "undefined") return;
+  clearToken();
+  if (window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
+}
+
 async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: authHeaders(),
+    cache: "no-store",
+  });
+  if (res.status === 401) {
+    handle401();
+    throw new Error(`GET ${path} → 401`);
+  }
   if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -32,9 +58,13 @@ async function getJSON<T>(path: string): Promise<T> {
 async function patchJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "PATCH",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });
+  if (res.status === 401) {
+    handle401();
+    throw new Error(`PATCH ${path} → 401`);
+  }
   if (!res.ok) throw new Error(`PATCH ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }

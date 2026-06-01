@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { AppShell } from "../components/shell/AppShell";
-import { buildMock } from "../lib/mockData";
-import { STABLE_NOW } from "../lib/now";
+import { AuthProvider } from "../lib/auth";
 import "./globals.css";
 
 // CSS variable names match what tokens.css consumes — the design language
@@ -30,23 +28,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Build the mock substrate the shell needs (channels + outliers feed the
-  // ⌘K command palette; agentThread + commands seed the drawer + palette).
-  // Each page builds its own mock for its screen — deterministic with the
-  // same STABLE_NOW, so the data matches across the shell and page.
-  const { channels, outliers, agentThread, commands } = buildMock(STABLE_NOW);
-
+  // Root holds only what every route needs: fonts + auth context. The
+  // AppShell + mock substrate live in app/(app)/layout.tsx so the
+  // /login, /register, /auth/callback, /logout routes render bare.
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <AppShell
-          channels={channels}
-          outliers={outliers}
-          agentThread={agentThread}
-          commands={commands}
-        >
-          {children}
-        </AppShell>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

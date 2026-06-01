@@ -90,3 +90,19 @@ export interface Command {
   channelId?: string;
   outlierId?: string;
 }
+
+// ─── Auth ───────────────────────────────────────────────────────────
+export interface UserOut {
+  id: string;
+  email: string;
+  username: string;
+  name: string | null;
+  avatar_url: string | null;
+  provider: string | null;
+}
+
+export interface AuthProviders {
+  google: boolean;
+  github: boolean;
+  password: boolean;
+}

@@ -1,9 +1,9 @@
 "use client";
 
-import { AgentScreen } from "../../components/screens/AgentScreen";
-import { useAppShell } from "../../components/shell/context";
-import { buildMock } from "../../lib/mockData";
-import { STABLE_NOW } from "../../lib/now";
+import { AgentScreen } from "../../../components/screens/AgentScreen";
+import { useAppShell } from "../../../components/shell/context";
+import { buildMock } from "../../../lib/mockData";
+import { STABLE_NOW } from "../../../lib/now";
 
 const data = buildMock(STABLE_NOW);
 
