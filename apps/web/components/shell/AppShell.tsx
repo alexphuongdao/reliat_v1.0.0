@@ -13,6 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button, CommandPalette, Drawer, Icon, Tooltip } from "../ui";
 import { AgentScreen } from "../screens/AgentScreen";
 import { AppShellContext, type AgentScope } from "./context";
+import { UserMenu } from "./UserMenu";
 import type {
   AgentTurnMsg,
   Channel,
@@ -430,29 +431,7 @@ export function AppShell({
               </span>
             </Button>
             <span style={{ width: 1, height: 18, background: "var(--border)" }} />
-            <button
-              title="Account"
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "4px 8px 4px 4px",
-                borderRadius: "var(--r-pill)",
-                border: "1px solid var(--border-strong)",
-              }}
-            >
-              <span
-                style={{
-                  width: 22, height: 22, borderRadius: "50%",
-                  background: "var(--accent-dim)",
-                  color: "var(--accent-bright)",
-                  fontSize: 10.5, fontWeight: 700,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}
-              >
-                YO
-              </span>
-              <span style={{ fontSize: 12 }}>You</span>
-              <Icon name="chevdown" size={12} />
-            </button>
+            <UserMenu />
           </header>
 
           {/* Surface content */}
