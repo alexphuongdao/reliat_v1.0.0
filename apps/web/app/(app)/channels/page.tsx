@@ -1,43 +1,17 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { ChannelsScreen } from "../../../components/screens/ChannelsScreen";
-import { useAppShell } from "../../../components/shell/context";
-import { buildMock } from "../../../lib/mockData";
-import { STABLE_NOW } from "../../../lib/now";
-import { psdAt as psdHelper } from "../../../lib/psd";
-
-const data = buildMock(STABLE_NOW);
-
-// useSearchParams must be inside a Suspense boundary in Next 16.
-function ChannelsPageInner() {
-  const params = useSearchParams();
-  const initialChannelId = params.get("c") || "cv42";
-  const { openOutlier, askAgent } = useAppShell();
-
-  const psdAt = (channelId: string, idx: number) => {
-    const c = data.channels.find((ch) => ch.id === channelId)!;
-    return psdHelper(c, data.series[channelId] || [], idx);
-  };
-
-  return (
-    <ChannelsScreen
-      channels={data.channels}
-      series={data.series}
-      outliers={data.outliers}
-      psdAt={psdAt}
-      initialChannelId={initialChannelId}
-      onOpenOutlier={openOutlier}
-      onAskAgent={(s) => askAgent(s.scope)}
-    />
-  );
-}
+/**
+ * Channels — real-time data-science dashboard over ingested PsdRow data.
+ * Replaces the mock-driven ChannelsScreen with an analytics-first
+ * surface: KPI badges, SPC charts with ±1σ/2σ/3σ bands, sieve curve,
+ * percentile breakdown, multi-metric trend grid, and an excursion table.
+ *
+ * The previous mock-driven ChannelsScreen component is preserved in
+ * components/screens/ChannelsScreen.tsx as design reference; it is no
+ * longer mounted by any route.
+ */
+import { AnalyticsDashboard } from "../../../components/screens/channels/AnalyticsDashboard";
 
 export default function ChannelsPage() {
-  return (
-    <Suspense fallback={null}>
-      <ChannelsPageInner />
-    </Suspense>
-  );
+  return <AnalyticsDashboard />;
 }

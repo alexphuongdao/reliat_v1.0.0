@@ -289,6 +289,37 @@ SIEVE_COLUMNS: tuple[tuple[str, float], ...] = (
     ("sieve_00165", 0.0165),
 )
 
+class ExcursionTriage(Base):
+    """Persistent triage state for a computed excursion.
+
+    Excursions are derived from PsdRow on the fly (no rows of their own),
+    so the ack / resolve / assign workflow can't key off a natural row id.
+    We hash (channel, t, metric) to a 16-char id that's stable across
+    re-detections, and store triage state here. A row exists only once
+    a user has interacted with the excursion — the absence of a row
+    means status = "open".
+    """
+
+    __tablename__ = "excursion_triage"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    channel_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    t: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    metric: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+    assignee: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    summary: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    action: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=_utcnow, onupdate=_utcnow
+    )
+    updated_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+
 # Metrics the UI can chart / alert on. The first element is the DB column,
 # the second is a human label.
 METRIC_COLUMNS: tuple[tuple[str, str], ...] = (

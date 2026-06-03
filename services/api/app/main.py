@@ -8,14 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from .config import settings
-from .db import init_db, session_scope
+from .db import init_db
 from .routes.analytics import router as analytics_router
 from .routes.auth import router as auth_router
 from .routes.channels import router as channels_router
 from .routes.ingest import router as ingest_router
 from .routes.outliers import router as outliers_router
 from .security import get_current_user
-from .seed import is_seeded, seed_demo
 
 logger = logging.getLogger("reliat")
 
@@ -23,12 +22,9 @@ logger = logging.getLogger("reliat")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    if settings.seed_on_startup:
-        with session_scope() as s:
-            if not is_seeded(s):
-                logger.info("seeding demo data through ETL …")
-                counts = seed_demo(s)
-                logger.info("seed complete: %s", counts)
+    # Mock-data seeding was removed in E.4 — the channels/outliers routes
+    # now read straight from ingested PsdRow. RELIAT_SEED_ON_STARTUP is
+    # kept as a no-op env var for backward compatibility on deploys.
     yield
 
 

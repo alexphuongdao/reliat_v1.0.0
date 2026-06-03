@@ -86,6 +86,14 @@ export const api = {
 
   channels: () => getJSON<Channel[]>("/api/channels"),
 
+  channelConfigs: () => getJSON<ChannelConfigOut[]>("/api/channels/configs"),
+
+  updateChannelConfig: (channelName: string, body: ChannelConfigPatch) =>
+    patchJSON<ChannelConfigOut>(
+      `/api/channels/configs/${encodeURIComponent(channelName)}`,
+      body,
+    ),
+
   series: (channelId: string, range: RangeId = "24h") =>
     getJSON<SeriesPoint[]>(
       `/api/channels/${encodeURIComponent(channelId)}/series?range=${range}`,
@@ -191,6 +199,20 @@ async function deleteJSON<T>(path: string): Promise<T> {
 // Ingest + analytics response shapes — mirror the FastAPI returns
 // from services/api/app/routes/{ingest,analytics}.py.
 // ────────────────────────────────────────────────────────────────────
+
+export interface ChannelConfigOut {
+  channel_name: string;
+  display_name: string | null;
+  belt: string | null;
+  iterations_per_minute: number;
+  rows_total: number;
+}
+
+export interface ChannelConfigPatch {
+  display_name?: string | null;
+  belt?: string | null;
+  iterations_per_minute?: number;
+}
 
 export interface IngestBatchSummary {
   id: string;
