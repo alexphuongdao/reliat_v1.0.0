@@ -11,6 +11,7 @@ from .config import settings
 from .db import init_db, session_scope
 from .routes.auth import router as auth_router
 from .routes.channels import router as channels_router
+from .routes.ingest import router as ingest_router
 from .routes.outliers import router as outliers_router
 from .security import get_current_user
 from .seed import is_seeded, seed_demo
@@ -62,6 +63,9 @@ app.include_router(auth_router)
 _protected = [Depends(get_current_user)]
 app.include_router(channels_router, dependencies=_protected)
 app.include_router(outliers_router, dependencies=_protected)
+# Ingest router declares its own per-route auth so file uploads can attribute
+# the uploader to a user. No global dependency injection needed here.
+app.include_router(ingest_router)
 
 
 @app.get("/api/health")

@@ -17,6 +17,10 @@ dependencies = [
     "itsdangerous>=2.2",  # signs the session cookie that holds OAuth state
     "pyjwt>=2.8",         # our own access tokens
     "bcrypt>=4.1",        # password hashing (used directly, not via passlib)
+    # analytics
+    "pandas>=2.2",        # CSV parsing, rolling windows, group-by aggregations
+    "numpy>=1.26",        # numeric ops underneath pandas
+    "scipy>=1.13",        # stats (rolling sigma, distributions, smoothing)
 ]
 
 [project.optional-dependencies]
