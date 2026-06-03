@@ -9,6 +9,7 @@ import { Sparkline } from "../charts";
 import { fmtAge, fmtNum, fmtTime } from "../../lib/format";
 import type { Channel, Outlier, SeriesPoint } from "../../lib/types";
 import { ChannelVitalRow } from "./pulse/ChannelVitalRow";
+import { LiveDataSection } from "./pulse/LiveDataSection";
 import { OutlierRow } from "./pulse/OutlierRow";
 
 export interface PulseScreenProps {
@@ -41,6 +42,10 @@ export function PulseScreen({
 
   return (
     <div style={{ padding: "20px 24px 32px", maxWidth: 1680, margin: "0 auto" }}>
+
+      {/* Real customer data driven by ingested CSVs. Renders empty-state
+          CTA when no batches have been uploaded yet. */}
+      <LiveDataSection />
 
       {/* status header */}
       <div
