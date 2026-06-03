@@ -7,6 +7,7 @@ shapes directly — no adapter layer.
 """
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -16,6 +17,40 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import METRIC_COLUMNS, SIEVE_COLUMNS, ChannelConfig, PsdRow
+
+
+def _f(v: Any, default: float = 0.0) -> float:
+    """Float coercion that turns NaN / Inf into a safe default.
+
+    Critical: the default `json` encoder writes NaN as the literal token
+    `NaN`, which is invalid JSON, so any pandas NaN bleeding into a
+    response makes `res.json()` throw on the client. This kills the
+    whole Promise.all even if only one metric had no samples. Every
+    float that leaves a return statement should pass through here.
+    """
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return default
+    if math.isnan(x) or math.isinf(x):
+        return default
+    return x
+
+
+def _scrub(obj: Any) -> Any:
+    """Recursively replace NaN / Inf floats with None inside a JSON-bound payload.
+
+    Belt-and-braces for any place we forget `_f()` — applied at each
+    route entry point so the response is always valid JSON.
+    """
+    if isinstance(obj, dict):
+        return {k: _scrub(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_scrub(v) for v in obj]
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+    return obj
 
 # Default lookback when a caller doesn't specify one. Tuned for the
 # expected analyzer cadence (≤ 1 iter/min) — at 1/min this is 24h × 60 = 1440 rows.

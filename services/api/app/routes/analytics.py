@@ -35,7 +35,7 @@ def list_channel_summaries(
     session: Session = Depends(get_session),
     _: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
-    return A.channel_summary(session)
+    return A.scrub(A.channel_summary(session))
 
 
 @router.get("/series")
@@ -51,10 +51,10 @@ def get_series(
     if metric not in _METRIC_NAMES:
         raise HTTPException(400, f"unknown metric '{metric}'")
     try:
-        return A.series_with_bands(
+        return A.scrub(A.series_with_bands(
             session, channel, metric, window,
             _parse_epoch_ms(t_from), _parse_epoch_ms(t_to),
-        )
+        ))
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -72,10 +72,10 @@ def get_spc(
     if metric not in _METRIC_NAMES:
         raise HTTPException(400, f"unknown metric '{metric}'")
     try:
-        return A.spc_series(
+        return A.scrub(A.spc_series(
             session, channel, metric, window,
             _parse_epoch_ms(t_from), _parse_epoch_ms(t_to),
-        )
+        ))
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -88,10 +88,10 @@ def get_psd_curve(
     session: Session = Depends(get_session),
     _: User = Depends(get_current_user),
 ) -> dict[str, Any]:
-    return A.psd_curve(
+    return A.scrub(A.psd_curve(
         session, channel,
         _parse_epoch_ms(t_from), _parse_epoch_ms(t_to),
-    )
+    ))
 
 
 @router.get("/excursions")
@@ -104,11 +104,11 @@ def get_excursions(
     session: Session = Depends(get_session),
     _: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
-    return A.excursions(
+    return A.scrub(A.excursions(
         session, channel,
         _parse_epoch_ms(t_from), _parse_epoch_ms(t_to),
         threshold=threshold, limit=limit,
-    )
+    ))
 
 
 @router.get("/metrics")

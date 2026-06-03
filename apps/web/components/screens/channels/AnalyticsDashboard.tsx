@@ -63,16 +63,25 @@ const SPC_METRIC_OPTIONS: Array<{ id: string; label: string }> = [
 const WINDOW_OPTIONS: WindowId[] = ["1m", "5m", "10m", "30m", "1h", "1d"];
 
 // Metrics shown in the small-multiples grid below the primary SPC panel.
-const GRID_METRICS: Array<{ id: string; label: string }> = [
-  { id: "topsize", label: "Topsize" },
-  { id: "f90", label: "F90" },
-  { id: "f80", label: "F80" },
-  { id: "f50", label: "F50" },
-  { id: "f10", label: "F10" },
-  { id: "sd_ratio_10_5", label: "SD Ratio" },
-  { id: "avg_hue", label: "Hue" },
-  { id: "avg_lightness", label: "Lightness" },
+const GRID_METRICS: Array<{ id: string; label: string; unit?: string }> = [
+  { id: "topsize", label: "Topsize", unit: "in" },
+  { id: "f90", label: "F90", unit: "in" },
+  { id: "f80", label: "F80", unit: "in" },
+  { id: "f70", label: "F70", unit: "in" },
+  { id: "f50", label: "F50", unit: "in" },
+  { id: "f10", label: "F10", unit: "in" },
+  { id: "sd_ratio_10_5", label: "SD Ratio 10/5" },
+  { id: "avg_hue", label: "Avg Hue" },
+  { id: "avg_lightness", label: "Avg Lightness" },
 ];
+
+const METRIC_UNITS: Record<string, string> = {
+  topsize: "in", f90: "in", f80: "in", f70: "in", f60: "in",
+  f50: "in", f40: "in", f30: "in", f20: "in", f10: "in",
+  sd_ratio_10_5: "ratio",
+  avg_hue: "", avg_saturation: "", avg_lightness: "",
+  video_red: "0-255", video_green: "0-255", video_blue: "0-255",
+};
 
 export function AnalyticsDashboard() {
   const [channels, setChannels] = useState<ChannelSummary[] | null>(null);
@@ -102,28 +111,41 @@ export function AnalyticsDashboard() {
     void refresh();
   }, [refresh]);
 
-  // Primary panels reload when channel/metric/window change.
+  // SPC reloads when channel/metric/window changes.
   useEffect(() => {
     if (!selectedChannel) return;
     let cancelled = false;
-    Promise.all([
-      api.analytics.spc(selectedChannel, selectedMetric, spcWindow),
-      api.analytics.psd(selectedChannel),
-      api.analytics.excursions({ channel: selectedChannel, threshold: 2.0, limit: 25 }),
-    ])
-      .then(([s, p, ex]) => {
-        if (cancelled) return;
-        setSpc(s);
-        setPsd(p);
-        setExcursions(ex);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "load failed");
-      });
-    return () => {
-      cancelled = true;
-    };
+    setSpc(null);
+    api.analytics
+      .spc(selectedChannel, selectedMetric, spcWindow)
+      .then((d) => { if (!cancelled) setSpc(d); })
+      .catch((e) => { if (!cancelled) setError(`SPC: ${describe(e)}`); });
+    return () => { cancelled = true; };
   }, [selectedChannel, selectedMetric, spcWindow]);
+
+  // PSD reloads only when the channel changes (it averages the whole history).
+  useEffect(() => {
+    if (!selectedChannel) return;
+    let cancelled = false;
+    setPsd(null);
+    api.analytics
+      .psd(selectedChannel)
+      .then((d) => { if (!cancelled) setPsd(d); })
+      .catch((e) => { if (!cancelled) setError(`PSD: ${describe(e)}`); });
+    return () => { cancelled = true; };
+  }, [selectedChannel]);
+
+  // Excursions list reloads on channel change.
+  useEffect(() => {
+    if (!selectedChannel) return;
+    let cancelled = false;
+    setExcursions([]);
+    api.analytics
+      .excursions({ channel: selectedChannel, threshold: 2.0, limit: 25 })
+      .then((d) => { if (!cancelled) setExcursions(d); })
+      .catch((e) => { if (!cancelled) setError(`Excursions: ${describe(e)}`); });
+    return () => { cancelled = true; };
+  }, [selectedChannel]);
 
   // Small-multiples reload only when channel changes (8 fetches in parallel).
   useEffect(() => {
@@ -156,6 +178,7 @@ export function AnalyticsDashboard() {
       GRID_METRICS.map((m) => ({
         id: m.id,
         label: m.label,
+        unit: m.unit,
         data: gridSeries[m.id] ?? null,
       })),
     [gridSeries],
@@ -238,70 +261,79 @@ export function AnalyticsDashboard() {
         })}
       </div>
 
-      {/* PRIMARY: SPC + PSD two-up */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, marginBottom: 14 }}>
-        <section className="panel" style={{ padding: "12px 14px" }}>
-          <header
-            style={{
-              display: "flex", alignItems: "center",
-              justifyContent: "space-between", marginBottom: 8,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <h3 style={{ margin: 0, fontSize: 12.5, fontWeight: 600 }}>
-                SPC · {labelFor(selectedMetric)}
-              </h3>
-              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-                rolling {spcWindow} baseline · ±1σ/2σ/3σ control bands
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              <select
-                value={selectedMetric}
-                onChange={(e) => setSelectedMetric(e.target.value)}
-                style={selectStyle}
-              >
-                {SPC_METRIC_OPTIONS.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </select>
-              <select
-                value={spcWindow}
-                onChange={(e) => setSpcWindow(e.target.value as WindowId)}
-                style={selectStyle}
-              >
-                {WINDOW_OPTIONS.map((w) => (
-                  <option key={w} value={w}>{w}</option>
-                ))}
-              </select>
-            </div>
-          </header>
-          {spc ? (
-            <SpcChart data={spc} width={840} height={320} yLabel={labelFor(selectedMetric)} />
-          ) : (
-            <div style={chartPlaceholder(320)}>loading…</div>
-          )}
-        </section>
-
-        <section className="panel" style={{ padding: "12px 14px" }}>
-          <header style={{ marginBottom: 8 }}>
-            <h3 style={{ margin: 0, fontSize: 12.5, fontWeight: 600 }}>
-              PSD sieve curve
+      {/* PRIMARY SPC — full width, large */}
+      <section className="panel" style={{ padding: "14px 16px", marginBottom: 14 }}>
+        <header
+          style={{
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", marginBottom: 10,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+              SPC · {labelFor(selectedMetric)}
             </h3>
-            <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-              averaged over {psd?.rows_aggregated ?? 0} rows
+            <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+              rolling {spcWindow} baseline · ±1σ/2σ/3σ control bands
             </span>
-          </header>
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <select
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value)}
+              style={selectStyle}
+            >
+              {SPC_METRIC_OPTIONS.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+            <select
+              value={spcWindow}
+              onChange={(e) => setSpcWindow(e.target.value as WindowId)}
+              style={selectStyle}
+            >
+              {WINDOW_OPTIONS.map((w) => (
+                <option key={w} value={w}>{w}</option>
+              ))}
+            </select>
+          </div>
+        </header>
+        {spc ? (
+          <SpcChart
+            data={spc}
+            width={1240}
+            height={440}
+            yLabel={labelFor(selectedMetric)}
+            yUnit={METRIC_UNITS[selectedMetric] || undefined}
+          />
+        ) : (
+          <div style={chartPlaceholder(440)}>loading…</div>
+        )}
+      </section>
+
+      {/* PSD — own row, large with percentile breakdown alongside */}
+      <section className="panel" style={{ padding: "14px 16px", marginBottom: 14 }}>
+        <header style={{ marginBottom: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+            PSD sieve curve
+          </h3>
+          <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+            averaged over {psd?.rows_aggregated ?? 0} rows · cumulative % passing vs sieve aperture
+          </span>
+        </header>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 18 }}>
           {psd ? (
-            <PsdCurveChart data={psd} width={360} height={260} />
+            <PsdCurveChart data={psd} width={820} height={380} />
           ) : (
-            <div style={chartPlaceholder(260)}>loading…</div>
+            <div style={chartPlaceholder(380)}>loading…</div>
           )}
-          {psd && Object.keys(psd.percentiles).length > 0 && (
+          {psd && Object.keys(psd.percentiles).length > 0 ? (
             <PercentileBars percentiles={psd.percentiles} />
+          ) : (
+            <div />
           )}
-        </section>
-      </div>
+        </div>
+      </section>
 
       {/* SMALL MULTIPLES */}
       <section className="panel" style={{ padding: "12px 14px", marginBottom: 14 }}>
@@ -467,6 +499,11 @@ function ExcursionRow({ ex }: { ex: Excursion }) {
       </span>
     </div>
   );
+}
+
+function describe(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return String(e);
 }
 
 function fmtVal(v: number): string {

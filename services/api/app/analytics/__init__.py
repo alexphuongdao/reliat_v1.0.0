@@ -12,6 +12,7 @@ from .engine import (
     psd_curve,
     series_with_bands,
     spc_series,
+    _scrub as scrub,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "psd_curve",
     "series_with_bands",
     "spc_series",
+    "scrub",
 ]
