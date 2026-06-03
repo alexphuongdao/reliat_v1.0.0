@@ -9,6 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .config import settings
 from .db import init_db, session_scope
+from .routes.analytics import router as analytics_router
 from .routes.auth import router as auth_router
 from .routes.channels import router as channels_router
 from .routes.ingest import router as ingest_router
@@ -63,9 +64,10 @@ app.include_router(auth_router)
 _protected = [Depends(get_current_user)]
 app.include_router(channels_router, dependencies=_protected)
 app.include_router(outliers_router, dependencies=_protected)
-# Ingest router declares its own per-route auth so file uploads can attribute
-# the uploader to a user. No global dependency injection needed here.
+# Ingest + analytics routers declare auth per-route so they can attribute
+# the uploader and surface 401s cleanly. No global injection here.
 app.include_router(ingest_router)
+app.include_router(analytics_router)
 
 
 @app.get("/api/health")
