@@ -1,0 +1,24 @@
+<div data-root ref="{{ setRoot }}" style="position:relative;background:#fff8e7">
+
+  <!-- fixed chrome -->
+  <div data-chrome style="position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 28px;pointer-events:none">
+    <div data-brand-lockup style="position:relative;width:128px;height:30px;overflow:hidden;pointer-events:auto;background:#101728;border-radius:4px">
+      <img data-brand-logo src="./assets/brand/reliat-logo-dark-background.png" alt="Reliat" style="position:absolute;display:block;width:144px;height:auto;max-width:none;left:-16px;top:-13px">
+    </div>
+    <div data-chrome-actions style="display:flex;align-items:center;gap:14px;pointer-events:auto">
+      <div data-progress-wrap style="width:120px;height:3px;background:rgba(16,23,40,.12);border-radius:2px;overflow:hidden">
+        <div data-progress style="height:100%;width:0%;background:#00BF63"></div>
+      </div>
+      <!-- Restore when the auth/platform route is ready:
+      <a data-platform-link href="http://localhost:3300/outliers" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;color:#fffdf4;background:#00BF63;border-radius:20px;padding:7px 14px;white-space:nowrap">Enter platform →</a>
+      -->
+      <button data-header-cta type="button" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;color:#fffdf4;background:#00BF63;border:none;border-radius:20px;padding:7px 14px;white-space:nowrap;cursor:pointer">Contact us</button>
+    </div>
+  </div>
+
+  <!-- persistent incident object -->
+  <div data-chip style="position:fixed;left:50%;top:14%;z-index:55;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;display:flex;align-items:center;gap:10px;background:#fffdf4;border:1.5px solid #7ED957;border-radius:999px;padding:8px 15px 8px 12px;box-shadow:0 10px 30px -12px rgba(0,191,99,.38)">
+    <span style="width:9px;height:9px;border-radius:50%;background:#7ED957;animation:rdot 1.6s ease-in-out infinite"></span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.03em">INC-26-0417</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#260E69">oversize&nbsp;bypass</span>
+  </div>

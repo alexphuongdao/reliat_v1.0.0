@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#fff8e7;color:#101728;font-family:'Sora',system-ui,sans-serif;font-weight:400;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  h1,h2{font-family:'Sora',system-ui,sans-serif;font-weight:300!important;letter-spacing:-.025em!important}
+  a{color:#00BF63;text-decoration:none}
+  a:hover{color:#1F41BB}
+  ::selection{background:#C1FF72;color:#101728}
+  @keyframes rdot{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+  [data-hero-kicker]{padding-left:max(0px,calc(165px - 8vw))}
+  @media (max-width:600px){
+    [data-chrome]{padding:16px 18px!important}
+    [data-chrome-actions]{gap:10px!important}
+    [data-progress-wrap]{width:54px!important}
+    [data-header-cta]{font-size:10px!important;padding:7px 10px!important}
+  }
+  @media (max-width:899px){[data-hero-kicker]{padding-left:0}}
+</style>
+</helmet>
