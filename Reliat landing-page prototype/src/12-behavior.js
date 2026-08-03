@@ -47,6 +47,7 @@ class Component extends DCLogic {
     this.beltSvgHost = this.q('[data-belt-svg]');
     this.sizeSvgHost = this.q('[data-size-chart]');
     this.topoHost = this.q('[data-topo]');
+    this.topologyGrid = this.q('[data-topology-grid]');
     this.evGrid = this.q('[data-evgrid]');
     this.artifactMetrics = this.q('[data-artifact-metrics]');
     this.finalScene = this.q('[data-scene="6"]');
@@ -57,7 +58,7 @@ class Component extends DCLogic {
     if (src) { this.video.src = src; this.video.style.display = 'block'; this.video.play().catch(() => {}); }
     this.accent = (this.props && this.props.accentColor) || '#00BF63';
 
-    this.p = 0; this.target = 0;
+    this.p = 0; this.target = 0; this._lastFrame = performance.now();
     this.mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.buildParticles();
     this.buildBeltSvg();
@@ -72,7 +73,7 @@ class Component extends DCLogic {
     if (this.mq.addEventListener) this.mq.addEventListener('change', this._resize);
 
     this.onResize();
-    const loop = () => { this.frame(); this._raf = requestAnimationFrame(loop); };
+    const loop = (now) => { this.frame(now); this._raf = requestAnimationFrame(loop); };
     loop();
   }
 
@@ -86,9 +87,7 @@ class Component extends DCLogic {
 
   onScroll() {
     if (this.mode === 'sequence') return;
-    this.p = this.computeP();
-    this.applyCinematic();
-    this.drawCanvas();
+    this.target = this.computeP();
   }
 
   onResize() {
@@ -100,7 +99,10 @@ class Component extends DCLogic {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const seq = this.vw < 900 || this.prefersReducedMotion;
     this.setMode(seq ? 'sequence' : 'cinematic');
-    this.onScroll();
+    this.target = this.computeP();
+    this.p = this.target;
+    if (this.mode === 'cinematic') this.applyCinematic();
+    this.drawCanvas();
   }
 
   setMode(mode) {
@@ -131,7 +133,7 @@ class Component extends DCLogic {
         h.style.gridTemplateColumns = '1fr';
         if (h.children[2]) h.children[2].style.gridTemplateColumns = '1fr';
       });
-      if (this.topoHost.parentElement) this.topoHost.parentElement.style.gridTemplateColumns = '1fr';
+      if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
       this.finalScene.style.flexDirection = 'column';
       this.finalScene.style.gap = '72px';
@@ -150,7 +152,7 @@ class Component extends DCLogic {
       this.setTopo(1);
       this.setSizeStatic();
     } else {
-      this.track.style.height = '1200vh';
+      this.track.style.height = '1500vh';
       this.pin.style.position = 'fixed';
       this.pin.style.top = '0';
       this.pin.style.left = '0';
@@ -161,10 +163,10 @@ class Component extends DCLogic {
       this.world.style.position = 'absolute';
       this.world.style.height = '100%';
       this.world.style.width = '';
-      this.world.style.transition = 'transform .22s cubic-bezier(.22,.61,.36,1)';
-      this.copies.forEach(c => { c.setAttribute('style', c._css + ';transition:opacity .4s ease, transform .4s ease'); });
-      this.evs.forEach(e => { e.style.transition = 'opacity .4s ease, transform .4s ease'; });
-      this.hyps.forEach(hh => { hh.style.transition = 'opacity .4s ease, transform .4s ease'; });
+      this.world.style.transition = 'none';
+      this.copies.forEach(c => { c.setAttribute('style', c._css + ';transition:none'); });
+      this.evs.forEach(e => { e.style.transition = 'none'; });
+      this.hyps.forEach(hh => { hh.style.transition = 'none'; });
       this.canvas.style.display = 'block';
       this.chip.style.display = 'flex';
       this.beltSvgHost.style.display = 'none';
@@ -180,7 +182,7 @@ class Component extends DCLogic {
         h.style.gridTemplateColumns = '56px 1.15fr 2fr';
         if (h.children[2]) h.children[2].style.gridTemplateColumns = 'repeat(3,1fr)';
       });
-      if (this.topoHost.parentElement) this.topoHost.parentElement.style.gridTemplateColumns = '1.9fr 1fr';
+      if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1.75fr .75fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(4,1fr)';
       this.finalScene.style.flexDirection = '';
       this.finalScene.style.gap = '';
@@ -189,7 +191,7 @@ class Component extends DCLogic {
         s.style.width = '';
         s.style.height = '100vh';
         s.style.minHeight = '';
-        s.style.padding = s.dataset.scene === '3' || s.dataset.scene === '4' ? '0 7vw' : s.dataset.scene === '5' ? '0 6vw' : s.dataset.scene === '6' ? '0 6vw' : s.dataset.scene === '0' ? '0 8vw' : '0';
+        s.style.padding = s.dataset.scene === '3' || s.dataset.scene === '4' ? '0 7vw' : s.dataset.scene === '5' ? '0 5vw' : s.dataset.scene === '6' ? '0 6vw' : s.dataset.scene === '0' ? '0 8vw' : '0';
         s.style.borderBottom = 'none';
       });
     }
@@ -258,19 +260,18 @@ class Component extends DCLogic {
 
   // ---------- build: topology ----------
   buildTopology() {
-    const W = 1000, H = 520;
+    const W = 1100, H = 440;
     const s = this.svg(W, H);
     this.topoSvg = s;
     const N = {
-      crusher: { x: 130, y: 150, label: 'CRUSHER' },
-      cv02: { x: 340, y: 150, label: 'CV-02' },
-      sc01: { x: 555, y: 150, label: 'SCREEN' },
-      ml01: { x: 555, y: 360, label: 'MILL' },
-      el01: { x: 790, y: 360, label: 'ELEVATOR' },
-      out: { x: 900, y: 150, label: 'LOAD-OUT' }
+      crusher: { x: 110, y: 190, code: 'CR-01', label: 'Crusher', index: '01' },
+      cv02: { x: 310, y: 190, code: 'CV-02', label: 'Conveyor', index: '02' },
+      sc01: { x: 510, y: 190, code: 'SC-01', label: 'Screen', index: '03' },
+      ml01: { x: 510, y: 345, code: 'ML-01', label: 'Mill', index: '04' },
+      el01: { x: 765, y: 345, code: 'EL-01', label: 'Elevator', index: '05' },
+      out: { x: 990, y: 190, code: 'LO-01', label: 'Load-out', index: '06' }
     };
     this.N = N;
-    // edges: [from,to, order(-1=neutral loop), dashed, path]
     this.edges = [
       { a: 'crusher', b: 'cv02', o: 0 },
       { a: 'cv02', b: 'sc01', o: 1 },
@@ -279,42 +280,39 @@ class Component extends DCLogic {
       { a: 'el01', b: 'out', o: 4, curve: true },
       { a: 'sc01', b: 'crusher', o: -1, loop: true }
     ];
-    // draw edges
     this.edgeEls = this.edges.map(e => {
       const A = N[e.a], B = N[e.b];
       let d;
-      if (e.loop) d = 'M ' + A.x + ' ' + (A.y - 34) + ' C ' + (A.x - 40) + ' ' + (A.y - 150) + ', ' + (B.x - 20) + ' ' + (B.y - 150) + ', ' + B.x + ' ' + (B.y - 34);
-      else if (e.curve) d = 'M ' + (A.x + 34) + ' ' + A.y + ' C ' + (A.x + 90) + ' ' + A.y + ', ' + (B.x - 60) + ' ' + B.y + ', ' + B.x + ' ' + (B.y + 30);
-      else if (A.x === B.x) d = 'M ' + A.x + ' ' + (A.y + 34) + ' L ' + B.x + ' ' + (B.y - 34);
-      else d = 'M ' + (A.x + 34) + ' ' + A.y + ' L ' + (B.x - 34) + ' ' + B.y;
-      const base = this.el('path', { d: d, fill: 'none', stroke: 'rgba(31,65,187,.24)', 'stroke-width': e.loop ? 2 : 3, 'stroke-linecap': 'round' });
-      if (e.dashed || e.loop) base.setAttribute('stroke-dasharray', '7 6');
+      if (e.loop) d = 'M ' + A.x + ' ' + (A.y - 38) + ' C ' + (A.x - 30) + ' 56, ' + (B.x + 24) + ' 56, ' + B.x + ' ' + (B.y - 38);
+      else if (e.curve) d = 'M ' + (A.x + 62) + ' ' + A.y + ' C ' + (A.x + 130) + ' ' + A.y + ', ' + (B.x - 90) + ' ' + B.y + ', ' + (B.x - 62) + ' ' + B.y;
+      else if (A.x === B.x) d = 'M ' + A.x + ' ' + (A.y + 38) + ' L ' + B.x + ' ' + (B.y - 38);
+      else d = 'M ' + (A.x + 62) + ' ' + A.y + ' L ' + (B.x - 62) + ' ' + B.y;
+      const base = this.el('path', { d: d, fill: 'none', stroke: e.loop ? 'rgba(31,65,187,.35)' : 'rgba(16,23,40,.20)', 'stroke-width': e.loop ? 1.25 : 1.5, 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke' });
+      if (e.dashed || e.loop) base.setAttribute('stroke-dasharray', '6 7');
       s.appendChild(base);
-      const hot = this.el('path', { d: d, fill: 'none', stroke: '#7ED957', 'stroke-width': e.loop ? 2 : 3.5, 'stroke-linecap': 'round', opacity: 0 });
-      const len = 400;
-      hot.setAttribute('stroke-dasharray', len);
-      hot.setAttribute('stroke-dashoffset', len);
-      hot._len = len;
+      const hot = this.el('path', { d: d, fill: 'none', stroke: '#00BF63', 'stroke-width': 2.5, 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1, opacity: 0 });
       if (e.o >= 0) s.appendChild(hot);
-      // loop label
       if (e.loop) {
-        const t = this.el('text', { x: (A.x + B.x) / 2, y: A.y - 128, fill: '#1F41BB', 'font-size': 13, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' });
-        t.textContent = 'recirc (intended)'; s.appendChild(t);
+        const t = this.el('text', { x: (A.x + B.x) / 2, y: 72, fill: '#1F41BB', 'font-size': 11, 'letter-spacing': 1.2, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' });
+        t.textContent = 'NOMINAL RECIRCULATION'; s.appendChild(t);
       }
       return { spec: e, hot: hot };
     });
-    // nodes
     this.nodeEls = {};
     Object.keys(N).forEach(key => {
       const n = N[key];
       const g = this.el('g', {});
-      const box = this.el('rect', { x: n.x - 46, y: n.y - 26, width: 92, height: 52, rx: 12, fill: '#fffdf4', stroke: 'rgba(31,65,187,.28)', 'stroke-width': 1.6 });
-      const t = this.el('text', { x: n.x, y: n.y + 5, fill: '#101728', 'font-size': 15, 'font-weight': 600, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' });
-      t.textContent = n.label;
-      g.appendChild(box); g.appendChild(t); s.appendChild(g);
-      this.nodeEls[key] = { box: box, text: t };
+      const box = this.el('rect', { x: n.x - 62, y: n.y - 38, width: 124, height: 76, rx: 3, fill: '#fffdf4', stroke: 'rgba(16,23,40,.30)', 'stroke-width': 1.25, 'vector-effect': 'non-scaling-stroke' });
+      const index = this.el('text', { x: n.x - 48, y: n.y - 17, fill: '#1F41BB', 'font-size': 9.5, 'letter-spacing': 1.1, 'font-family': 'IBM Plex Mono, monospace' });
+      index.textContent = n.index;
+      const code = this.el('text', { x: n.x, y: n.y + 1, fill: '#101728', 'font-size': 14, 'font-weight': 600, 'letter-spacing': .5, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' });
+      code.textContent = n.code;
+      const label = this.el('text', { x: n.x, y: n.y + 22, fill: '#260E69', 'font-size': 11, 'font-family': 'Sora, sans-serif', 'text-anchor': 'middle' });
+      label.textContent = n.label;
+      const dot = this.el('circle', { cx: n.x + 48, cy: n.y - 22, r: 3.5, fill: '#00BF63', opacity: 0 });
+      g.appendChild(box); g.appendChild(index); g.appendChild(code); g.appendChild(label); g.appendChild(dot); s.appendChild(g);
+      this.nodeEls[key] = { box: box, index: index, code: code, label: label, dot: dot };
     });
-    // timing labels on amber path
     this.timeLabels = [
       { key: 'crusher', txt: 't0' },
       { key: 'cv02', txt: '+38s' },
@@ -322,7 +320,7 @@ class Component extends DCLogic {
       { key: 'ml01', txt: '+1m47s' }
     ].map(o => {
       const n = N[o.key];
-      const t = this.el('text', { x: n.x, y: n.y + 46, fill: '#00BF63', 'font-size': 13, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle', opacity: 0 });
+      const t = this.el('text', { x: n.x, y: n.y + 57, fill: '#00BF63', 'font-size': 10.5, 'letter-spacing': .8, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle', opacity: 0 });
       t.textContent = o.txt; s.appendChild(t);
       return { el: t, key: o.key };
     });
@@ -330,31 +328,27 @@ class Component extends DCLogic {
   }
 
   setTopo(t) {
-    // amber path activation by order; each edge gets a slice of t
-    const orders = [0, 1, 2, 3, 4];
     this.edgeEls.forEach(({ spec, hot }) => {
       if (spec.o < 0) return;
-      const seg = 1 / orders.length;
-      const lt = this.clamp((t - spec.o * seg) / seg, 0, 1);
-      hot.setAttribute('opacity', lt > 0 ? 1 : 0);
-      hot.setAttribute('stroke-dashoffset', hot._len * (1 - lt));
+      const start = 0.08 + spec.o * 0.17;
+      const lt = this.ss(this.norm(t, start, start + 0.15));
+      hot.setAttribute('opacity', lt > 0.001 ? 1 : 0);
+      hot.setAttribute('stroke-dashoffset', 1 - lt);
     });
-    const amberFor = { crusher: 0, cv02: 1, sc01: 2, ml01: 3, el01: 4 };
-    Object.keys(amberFor).forEach(key => {
-      const seg = 1 / 5;
-      const lt = this.clamp((t - amberFor[key] * seg) / seg, 0, 1);
-      const box = this.nodeEls[key].box;
-      if (lt > 0.15) {
-        box.setAttribute('stroke', '#7ED957');
-        box.setAttribute('stroke-width', 2.4);
-        box.setAttribute('fill', key === 'ml01' ? '#C1FF72' : '#fffdf4');
-      } else {
-        box.setAttribute('stroke', 'rgba(31,65,187,.28)'); box.setAttribute('stroke-width', 1.6); box.setAttribute('fill', '#fffdf4');
-      }
+    const stageFor = { crusher: 0.02, cv02: 0.20, sc01: 0.38, ml01: 0.56, el01: 0.74, out: 0.92 };
+    Object.keys(stageFor).forEach(key => {
+      const lt = this.ss(this.norm(t, stageFor[key], stageFor[key] + 0.07));
+      const node = this.nodeEls[key];
+      node.box.setAttribute('fill', this.mix('#fffdf4', '#101728', lt));
+      node.box.setAttribute('stroke', this.mix('#59606f', '#101728', lt));
+      node.code.setAttribute('fill', this.mix('#101728', '#fffdf4', lt));
+      node.label.setAttribute('fill', this.mix('#260E69', '#fffdf4', lt));
+      node.index.setAttribute('fill', this.mix('#1F41BB', '#C1FF72', lt));
+      node.dot.setAttribute('opacity', lt);
     });
+    const labelStarts = [0.04, 0.22, 0.40, 0.58];
     this.timeLabels.forEach((o, i) => {
-      const seg = 1 / 5;
-      o.el.setAttribute('opacity', this.clamp((t - i * seg) / seg, 0, 1));
+      o.el.setAttribute('opacity', this.ss(this.norm(t, labelStarts[i], labelStarts[i] + 0.08)));
     });
   }
 
@@ -386,16 +380,26 @@ class Component extends DCLogic {
   }
 
   // ---------- frame ----------
-  frame() {
+  frame(now) {
     if (this.mode === 'sequence') { this.ctx.clearRect(0, 0, this.vw, this.vh); return; }
-    const p = this.computeP();
-    if (Math.abs(p - this.p) > 0.00004) { this.p = p; this.applyCinematic(); }
+    this.target = this.computeP();
+    const dt = Math.min(40, Math.max(1, (now || performance.now()) - this._lastFrame));
+    this._lastFrame = now || performance.now();
+    const alpha = 1 - Math.exp(-dt / 95);
+    const delta = this.target - this.p;
+    if (Math.abs(delta) > 0.00002) {
+      this.p += delta * alpha;
+      this.applyCinematic();
+    } else if (this.p !== this.target) {
+      this.p = this.target;
+      this.applyCinematic();
+    }
     this.drawCanvas();
   }
 
   drawCanvas() {
     const p = this.p, vw = this.vw, vh = this.vh;
-    const camIndex = this.kf(p, [[0, 0], [0.09, 0], [0.14, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.84, 5], [0.925, 5], [0.955, 6], [1, 6]]);
+    const camIndex = this.kf(p, [[0, 0], [0.09, 0], [0.14, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.825, 5], [0.945, 5], [0.958, 6], [1, 6]]);
     this.ctx.clearRect(0, 0, vw, vh);
     // Let the conveyor begin inside the hero's open right side, then use the
     // existing camera move to carry that same belt into the detection scene.
@@ -411,7 +415,7 @@ class Component extends DCLogic {
 
   applyCinematic() {
     const p = this.p, vw = this.vw, vh = this.vh;
-    const camIndex = this.kf(p, [[0, 0], [0.09, 0], [0.14, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.84, 5], [0.925, 5], [0.955, 6], [1, 6]]);
+    const camIndex = this.kf(p, [[0, 0], [0.09, 0], [0.14, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.825, 5], [0.945, 5], [0.958, 6], [1, 6]]);
     this.world.style.transform = 'translateX(' + (-camIndex * vw) + 'px)';
     if (this.progress) this.progress.style.width = (p * 100) + '%';
 
@@ -424,10 +428,10 @@ class Component extends DCLogic {
       bound: [0.465, 0.49, 0.515, 0.55],
       evidence: [0.555, 0.585, 0.655, 0.685],
       hypo: [0.695, 0.725, 0.795, 0.83],
-      topo: [0.835, 0.86, 0.915, 0.945],
-      propagation: [0.865, 0.89, 0.918, 0.945],
-      artifact: [0.95, 0.965, 1.02, 1.03],
-      cta: [0.985, 0.993, 1.02, 1.03]
+      topo: [0.81, 0.833, 0.937, 0.952],
+      propagation: [0.835, 0.86, 0.939, 0.952],
+      artifact: [0.955, 0.965, 0.988, 0.998],
+      cta: [0.987, 0.994, 1.02, 1.03]
     };
     this.copies.forEach(c => {
       const w = wins[c.dataset.copy]; if (!w) return;
@@ -444,7 +448,7 @@ class Component extends DCLogic {
     const pushT = this.ss(this.norm(p, 0.44, 0.49));
     const evidenceT = this.norm(p, 0.57, 0.665);
     const hypoT = this.norm(p, 0.71, 0.815);
-    const topoT = this.norm(p, 0.845, 0.925);
+    const topoT = this.norm(p, 0.83, 0.94);
 
     // evidence stagger
     this.evs.forEach((e, i) => {
@@ -461,7 +465,7 @@ class Component extends DCLogic {
     this.confs.forEach(c => {
       const target = parseFloat(c.dataset.conf) * 100;
       c.style.width = (target * this.ss(this.clamp((hypoT - 0.15) / 0.5, 0, 1))) + '%';
-      c.style.transition = 'width .1s linear';
+      c.style.transition = 'none';
     });
     // topology
     this.setTopo(topoT);
@@ -469,8 +473,8 @@ class Component extends DCLogic {
     // chip
     const chipO = this.fade(p, 0.372, 0.41, 1.02, 1.03);
     this.chip.style.opacity = chipO;
-    const cx = this.kf(p, [[0.372, 0.5], [0.55, 0.5], [0.84, 0.5], [0.885, 0.2], [0.925, 0.2], [0.955, 0.5], [1, 0.5]]);
-    const cy = this.kf(p, [[0.372, 0.34], [0.55, 0.13], [0.84, 0.13], [0.885, 0.34], [0.925, 0.34], [0.955, 0.12], [1, 0.12]]);
+    const cx = this.kf(p, [[0.372, 0.5], [0.55, 0.5], [0.80, 0.5], [0.83, 0.78], [0.945, 0.78], [0.958, 0.5], [1, 0.5]]);
+    const cy = this.kf(p, [[0.372, 0.34], [0.55, 0.13], [0.80, 0.13], [0.83, 0.12], [0.945, 0.12], [0.958, 0.12], [1, 0.12]]);
     this.chip.style.left = (cx * vw) + 'px';
     this.chip.style.top = (cy * vh) + 'px';
     this.chip.style.transform = 'translate(-50%,-50%) scale(' + this.lerp(0.9, 1, chipO) + ')';
