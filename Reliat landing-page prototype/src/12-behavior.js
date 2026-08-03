@@ -52,6 +52,10 @@ class Component extends DCLogic {
     this.evidenceFrame = this.q('[data-evidence-frame]');
     this.evidenceMeta = this.q('[data-evidence-meta]');
     this.evRules = this.qa('[data-ev-rule]');
+    this.hypGrid = this.q('[data-hypgrid]');
+    this.hypEvidence = this.qa('[data-hyp-evidence]');
+    this.hypDetails = this.qa('[data-hyp-detail]');
+    this.hypAccents = this.qa('[data-hyp-accent]');
     this.artifactMetrics = this.q('[data-artifact-metrics]');
     this.finalScene = this.q('[data-scene="6"]');
     this.video = this.q('[data-belt-video]');
@@ -133,10 +137,8 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.margin = '18px 0 28px';
       this.evGrid.style.gridTemplateColumns = '1fr';
       this.evGrid.style.gridTemplateRows = 'auto';
-      this.hyps.forEach(h => {
-        h.style.gridTemplateColumns = '1fr';
-        if (h.children[2]) h.children[2].style.gridTemplateColumns = '1fr';
-      });
+      this.hyps.forEach(h => { h.style.gridTemplateColumns = '42px minmax(0,1fr)'; });
+      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = '1fr'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
       this.finalScene.style.flexDirection = 'column';
@@ -159,6 +161,12 @@ class Component extends DCLogic {
       this.evRules.forEach(rule => rule.style.transform = 'scaleX(1)');
       (this.sparkPaths || []).forEach(path => path.setAttribute('stroke-dashoffset', 0));
       this.hyps.forEach(h => h.style.opacity = 1);
+      if (this.hypGrid) {
+        this.hypGrid.style.opacity = 1;
+        this.hypGrid.style.transform = 'none';
+      }
+      this.hypDetails.forEach(d => d.style.opacity = 1);
+      this.hypAccents.forEach(a => a.style.transform = 'scaleY(1)');
       this.confs.forEach(c => c.style.width = (parseFloat(c.dataset.conf) * 100) + '%');
       this.setTopo(1);
       this.setSizeStatic();
@@ -191,10 +199,8 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.margin = '';
       this.evGrid.style.gridTemplateColumns = '1.12fr 1fr 1fr';
       this.evGrid.style.gridTemplateRows = 'repeat(2,minmax(134px,1fr))';
-      this.hyps.forEach(h => {
-        h.style.gridTemplateColumns = '56px 1.15fr 2fr';
-        if (h.children[2]) h.children[2].style.gridTemplateColumns = 'repeat(3,1fr)';
-      });
+      this.hyps.forEach(h => { h.style.gridTemplateColumns = '74px minmax(255px,.9fr) minmax(500px,1.65fr) 92px'; });
+      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1.75fr .75fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(4,1fr)';
       this.finalScene.style.flexDirection = '';
@@ -416,6 +422,36 @@ class Component extends DCLogic {
     });
   }
 
+  setHypotheses(t) {
+    const frameT = this.ss(this.norm(t, 0, 0.18));
+    if (this.hypGrid) {
+      this.hypGrid.style.opacity = frameT;
+      this.hypGrid.style.transform = 'translateY(' + ((1 - frameT) * 10) + 'px)';
+    }
+
+    this.hyps.forEach((h, i) => {
+      const start = 0.06 + i * 0.16;
+      const reveal = this.ss(this.norm(t, start, start + 0.28));
+      const accent = this.ss(this.norm(t, start + 0.04, start + 0.31));
+      h.style.opacity = reveal;
+      h.style.transform = 'translateY(' + ((1 - reveal) * 12) + 'px)';
+      if (this.hypAccents[i]) this.hypAccents[i].style.transform = 'scaleY(' + accent + ')';
+
+      const details = Array.prototype.slice.call(h.querySelectorAll('[data-hyp-detail]'));
+      details.forEach((detail, j) => {
+        detail.style.opacity = this.ss(this.norm(t, start + 0.10 + j * 0.025, start + 0.34 + j * 0.025));
+      });
+
+      const conf = h.querySelector('[data-conf]');
+      if (conf) {
+        const target = parseFloat(conf.dataset.conf) * 100;
+        const confidenceT = this.ss(this.norm(t, start + 0.10, start + 0.38));
+        conf.style.width = (target * confidenceT) + '%';
+        conf.style.transition = 'none';
+      }
+    });
+  }
+
   // ---------- frame ----------
   frame(now) {
     if (this.mode === 'sequence') { this.ctx.clearRect(0, 0, this.vw, this.vh); return; }
@@ -489,17 +525,8 @@ class Component extends DCLogic {
 
     // evidence dossier: establish the frame, then reveal findings in reading order
     this.setEvidence(evidenceT);
-    // hypotheses stagger + confidence bars
-    this.hyps.forEach((h, i) => {
-      const lt = this.clamp((hypoT - i * 0.16) / 0.4, 0, 1);
-      h.style.opacity = this.ss(lt);
-      h.style.transform = 'translateY(' + ((1 - this.ss(lt)) * 22) + 'px)';
-    });
-    this.confs.forEach(c => {
-      const target = parseFloat(c.dataset.conf) * 100;
-      c.style.width = (target * this.ss(this.clamp((hypoT - 0.15) / 0.5, 0, 1))) + '%';
-      c.style.transition = 'none';
-    });
+    // root-cause assessment: reveal rank, evidence ledger, then confidence
+    this.setHypotheses(hypoT);
     // topology
     this.setTopo(topoT);
 

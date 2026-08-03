@@ -66,6 +66,51 @@
   .evidence-compact-reading span{font-size:9px;color:#00BF63}
   [data-ev-compact] [data-spark]{height:30px}
   [data-spark] svg{overflow:visible}
+  [data-hyp-heading]{display:grid;grid-template-columns:minmax(480px,1fr) minmax(300px,.55fr);gap:48px;align-items:end;max-width:1400px;margin:0 0 24px}
+  [data-hyp-heading] h2{font-size:clamp(34px,3.5vw,54px);line-height:1.01;margin:12px 0 0}
+  .hyp-kicker,.hyp-meta-key,.hyp-evidence-label,[data-hyp-rank] span,[data-hyp-rank] em,[data-hyp-score] em,.hyp-confidence-label{font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.14em}
+  .hyp-kicker{font-size:11px;color:#00BF63}
+  .hyp-kicker span{color:rgba(16,23,40,.34);padding:0 7px}
+  .hyp-intro{max-width:440px;padding:0 0 4px 24px;border-left:1px solid rgba(16,23,40,.22);font-size:13px;line-height:1.65;color:rgba(16,23,40,.67)}
+  [data-hypgrid]{max-width:1400px;border:1px solid rgba(16,23,40,.25);background:rgba(255,253,244,.58);box-shadow:0 24px 70px -60px rgba(16,23,40,.48);overflow:hidden;opacity:0}
+  [data-hyp-meta]{min-height:44px;display:grid;grid-template-columns:1.15fr 1fr .75fr 1.25fr;border-bottom:1px solid rgba(16,23,40,.22);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.07em}
+  [data-hyp-meta]>div{display:flex;align-items:center;gap:10px;padding:0 16px;border-left:1px solid rgba(16,23,40,.14);white-space:nowrap}
+  [data-hyp-meta]>div:first-child{border-left:0}
+  .hyp-meta-key{font-size:8px;color:rgba(16,23,40,.44)}
+  [data-hyp-meta] strong{font-size:9.5px;font-weight:500;color:#260E69}
+  [data-hyp-meta] .hyp-next-check{justify-content:flex-end;color:#260E69;font-size:9px}
+  .hyp-next-check span{color:#00BF63}
+  [data-hyp]{position:relative;display:grid;grid-template-columns:74px minmax(255px,.9fr) minmax(500px,1.65fr) 92px;gap:22px;align-items:center;min-height:126px;padding:17px 20px 17px 0;border-top:1px solid rgba(16,23,40,.15);background:transparent;opacity:0;overflow:hidden}
+  [data-hyp]:first-of-type{border-top:0}
+  [data-hyp-primary]{min-height:150px;background:rgba(255,255,255,.2)}
+  [data-hyp-accent]{position:absolute;left:0;top:0;width:3px;height:100%;background:rgba(31,65,187,.24);transform:scaleY(0);transform-origin:center top}
+  [data-hyp-primary] [data-hyp-accent]{background:#00BF63}
+  [data-hyp-rank]{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(16,23,40,.13);font-style:normal}
+  [data-hyp-rank] span{font-size:7.5px;color:rgba(16,23,40,.42)}
+  [data-hyp-rank] strong{font-family:'Sora',sans-serif;font-size:32px;font-weight:200;letter-spacing:-.05em;color:#1F41BB;line-height:1.15}
+  [data-hyp-primary] [data-hyp-rank] strong{color:#00BF63}
+  [data-hyp-rank] em{font-size:7px;color:rgba(16,23,40,.44);font-style:normal}
+  [data-hyp-summary]{min-width:0}
+  .hyp-title{font-size:17px;font-weight:500;line-height:1.2;margin-bottom:5px}
+  [data-hyp-summary]>p{font-size:11.5px;line-height:1.45;color:rgba(38,14,105,.72);margin:0 0 12px;max-width:390px}
+  .hyp-confidence-label{display:flex;justify-content:space-between;margin-bottom:5px;font-size:7.5px;color:rgba(16,23,40,.45)}
+  .hyp-confidence-label strong{font-weight:500;color:#260E69}
+  .hyp-confidence-track{height:2px;background:rgba(16,23,40,.10);overflow:hidden}
+  .hyp-confidence-track [data-conf]{height:100%;width:0;background:rgba(31,65,187,.38)}
+  [data-hyp-primary] .hyp-confidence-track [data-conf]{background:#00BF63}
+  [data-hyp-evidence]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;align-self:stretch}
+  [data-hyp-detail]{padding:5px 18px;border-left:1px solid rgba(16,23,40,.12);opacity:0}
+  [data-hyp-detail]:first-child{border-left:0}
+  .hyp-evidence-label{font-size:7.5px;margin-bottom:8px;color:#260E69}
+  .hyp-evidence-label.support{color:#00BF63}
+  .hyp-evidence-label.conflict{color:#1F41BB}
+  .hyp-evidence-label.missing{color:#260E69}
+  [data-hyp-detail] p{font-size:10.5px;line-height:1.55;color:rgba(38,14,105,.82);margin:0}
+  [data-hyp-score]{display:flex;align-items:baseline;justify-content:flex-end;align-self:start;padding-top:4px;font-family:'IBM Plex Mono',monospace;color:#260E69;white-space:nowrap}
+  [data-hyp-score] strong{font-family:'Sora',sans-serif;font-size:35px;font-weight:200;letter-spacing:-.06em}
+  [data-hyp-score] span{font-size:10px;margin-left:3px;color:#1F41BB}
+  [data-hyp-score] em{position:absolute;right:20px;bottom:17px;font-size:7px;font-style:normal;color:rgba(16,23,40,.42)}
+  [data-hyp-primary] [data-hyp-score] strong,[data-hyp-primary] [data-hyp-score] span{color:#00BF63}
   @media (max-width:600px){
     [data-chrome]{padding:16px 18px!important}
     [data-chrome-actions]{gap:10px!important}
@@ -87,6 +132,20 @@
     [data-ev-primary]{grid-row:auto}
     .evidence-baseline{grid-template-columns:auto 1fr}
     [data-evidence-meta] .evidence-verdict{justify-content:flex-start}
+    [data-hyp-heading]{grid-template-columns:1fr;gap:18px;margin-bottom:22px}
+    .hyp-intro{padding-left:16px}
+    [data-hyp-meta]{grid-template-columns:1fr}
+    [data-hyp-meta]>div{min-height:36px;border-top:1px solid rgba(16,23,40,.12);border-left:0;white-space:normal}
+    [data-hyp-meta] .hyp-next-check{justify-content:flex-start}
+    [data-hyp]{grid-template-columns:42px minmax(0,1fr)!important;gap:15px;align-items:start;padding:22px 18px 22px 0;min-height:0}
+    [data-hyp-rank]{grid-column:1;grid-row:1;height:auto;min-height:80px}
+    [data-hyp-summary]{grid-column:2;grid-row:1;padding-right:52px}
+    [data-hyp-evidence]{grid-column:1 / -1;grid-row:2;grid-template-columns:1fr!important;margin-left:18px;border-top:1px solid rgba(16,23,40,.12)}
+    [data-hyp-detail]{padding:13px 0;border-left:0;border-top:1px solid rgba(16,23,40,.10)}
+    [data-hyp-detail]:first-child{border-top:0}
+    [data-hyp-score]{position:absolute;right:18px;top:20px;padding:0}
+    [data-hyp-score] strong{font-size:28px}
+    [data-hyp-score] em{display:none}
   }
 </style>
 </helmet>
@@ -249,55 +308,77 @@
             </div>
           </div>
         </section>
-        <!-- SCENE 4 · HYPOTHESES -->
-        <section data-scene="4" data-screen-label="Hypotheses" style="flex:0 0 100vw;height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 7vw">
-          <div data-copy="hypo" style="margin-bottom:30px;max-width:820px">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.24em;color:#00BF63;margin-bottom:14px">PHASE 01 · ROOT CAUSE</div>
-            <h2 style="font-size:clamp(28px,3.6vw,54px);line-height:1.04;font-weight:700;letter-spacing:-.015em;margin:0">Ranked hypotheses, with what<br>supports and what's still missing.</h2>
+        <!-- SCENE 4 · ROOT CAUSE -->
+        <section data-scene="4" data-screen-label="Root cause" style="flex:0 0 100vw;height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 7vw">
+          <div data-copy="hypo" data-hyp-heading>
+            <div>
+              <div class="hyp-kicker">PHASE 01 <span>·</span> ROOT CAUSE</div>
+              <h2>Ranked by evidence,<br>not intuition.</h2>
+            </div>
+            <div class="hyp-intro">
+              Each explanation is tested against the same event record.<br>
+              Support, conflict, and uncertainty stay visible.
+            </div>
           </div>
-          <div data-hypgrid style="display:flex;flex-direction:column;gap:14px;max-width:1320px">
-            <div data-hyp style="background:#fffdf4;border:1px solid rgba(31,65,187,.18);border-radius:16px;padding:22px 24px;opacity:0;display:grid;grid-template-columns:56px 1.15fr 2fr;gap:24px;align-items:center">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:#00BF63">1</div>
-              <div>
-                <div style="font-size:19px;font-weight:600;line-height:1.25;margin-bottom:10px">Crusher CSS drift</div>
-                <div style="font-size:13px;color:#1F41BB;line-height:1.4;margin-bottom:12px">Closed-side setting opened, letting oversize through the crush zone.</div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1F41BB;margin-bottom:5px">CONFIDENCE 0.72</div>
-                <div style="height:7px;background:rgba(16,23,40,.08);border-radius:4px;overflow:hidden"><div data-conf="0.72" style="height:100%;width:0%;background:#7ED957;border-radius:4px"></div></div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#7ED957;margin-bottom:7px">SUPPORTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">Motor amps ↓ 8%<br>P80 rise matches gap<br>Localized to deck 2</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#00BF63;margin-bottom:7px">CONTRADICTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">No liner-wear alarm</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#1F41BB;margin-bottom:7px">MISSING</div><div style="font-size:12.5px;line-height:1.45;color:#1F41BB">Last CSS calibration log</div></div>
-              </div>
+
+          <div data-hypgrid>
+            <div data-hyp-meta>
+              <div><span class="hyp-meta-key">ASSESSMENT</span><strong>INC-26-0417 / RC-01</strong></div>
+              <div><span class="hyp-meta-key">BASIS</span><strong>05 ALIGNED SIGNALS</strong></div>
+              <div><span class="hyp-meta-key">STATUS</span><strong>PROVISIONAL</strong></div>
+              <div class="hyp-next-check"><span>NEXT BEST CHECK</span>CSS CALIBRATION LOG</div>
             </div>
-            <div data-hyp style="background:#fffdf4;border:1px solid rgba(31,65,187,.18);border-radius:16px;padding:22px 24px;opacity:0;display:grid;grid-template-columns:56px 1.15fr 2fr;gap:24px;align-items:center">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:#1F41BB">2</div>
-              <div>
-                <div style="font-size:19px;font-weight:600;line-height:1.25;margin-bottom:10px">Screen panel failure</div>
-                <div style="font-size:13px;color:#1F41BB;line-height:1.4;margin-bottom:12px">A torn deck panel passing oversize straight to product.</div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1F41BB;margin-bottom:5px">CONFIDENCE 0.19</div>
-                <div style="height:7px;background:rgba(16,23,40,.08);border-radius:4px;overflow:hidden"><div data-conf="0.19" style="height:100%;width:0%;background:rgba(38,14,105,.30);border-radius:4px"></div></div>
+
+            <article data-hyp="01" data-hyp-primary>
+              <div data-hyp-accent></div>
+              <div data-hyp-rank><span>RANK</span><strong>01</strong><em>LEADING</em></div>
+              <div data-hyp-summary>
+                <div class="hyp-title">Crusher CSS drift</div>
+                <p>Closed-side setting opened, allowing oversize material through the crush zone.</p>
+                <div class="hyp-confidence-label"><span>CONFIDENCE</span><strong>0.72</strong></div>
+                <div class="hyp-confidence-track"><div data-conf="0.72"></div></div>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#7ED957;margin-bottom:7px">SUPPORTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">Bypass on one deck</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#00BF63;margin-bottom:7px">CONTRADICTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">Even size across width<br>No inrush on screen motor</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#1F41BB;margin-bottom:7px">MISSING</div><div style="font-size:12.5px;line-height:1.45;color:#1F41BB">Deck camera frame</div></div>
+              <div data-hyp-evidence>
+                <div data-hyp-detail><div class="hyp-evidence-label support">SUPPORTING · 03</div><p>Motor amps ↓ 8%<br>P80 rise matches setting gap<br>Localized to deck 2</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label conflict">CONTRADICTING · 01</div><p>No liner-wear alarm</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label missing">MISSING · 01</div><p>Last CSS calibration log</p></div>
               </div>
-            </div>
-            <div data-hyp style="background:#fffdf4;border:1px solid rgba(31,65,187,.18);border-radius:16px;padding:22px 24px;opacity:0;display:grid;grid-template-columns:56px 1.15fr 2fr;gap:24px;align-items:center">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:#1F41BB">3</div>
-              <div>
-                <div style="font-size:19px;font-weight:600;line-height:1.25;margin-bottom:10px">Feed surge / segregation</div>
-                <div style="font-size:13px;color:#1F41BB;line-height:1.4;margin-bottom:12px">A momentary feed spike overwhelming the crush zone.</div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1F41BB;margin-bottom:5px">CONFIDENCE 0.09</div>
-                <div style="height:7px;background:rgba(16,23,40,.08);border-radius:4px;overflow:hidden"><div data-conf="0.09" style="height:100%;width:0%;background:rgba(38,14,105,.30);border-radius:4px"></div></div>
+              <div data-hyp-score><strong>72</strong><span>%</span><em>BEST FIT</em></div>
+            </article>
+
+            <article data-hyp="02">
+              <div data-hyp-accent></div>
+              <div data-hyp-rank><span>RANK</span><strong>02</strong><em>ALTERNATE</em></div>
+              <div data-hyp-summary>
+                <div class="hyp-title">Screen panel failure</div>
+                <p>A torn deck panel passing oversize directly to product.</p>
+                <div class="hyp-confidence-label"><span>CONFIDENCE</span><strong>0.19</strong></div>
+                <div class="hyp-confidence-track"><div data-conf="0.19"></div></div>
               </div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#7ED957;margin-bottom:7px">SUPPORTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">Feeder speed spike 14:22</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#00BF63;margin-bottom:7px">CONTRADICTING</div><div style="font-size:12.5px;line-height:1.45;color:#260E69">Size sustained past surge<br>No level drop in bin</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:#1F41BB;margin-bottom:7px">MISSING</div><div style="font-size:12.5px;line-height:1.45;color:#1F41BB">Feed hopper level trace</div></div>
+              <div data-hyp-evidence>
+                <div data-hyp-detail><div class="hyp-evidence-label support">SUPPORTING · 01</div><p>Bypass on one deck</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label conflict">CONTRADICTING · 02</div><p>Even size across width<br>No inrush on screen motor</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label missing">MISSING · 01</div><p>Deck camera frame</p></div>
               </div>
-            </div>
+              <div data-hyp-score><strong>19</strong><span>%</span><em>LOW FIT</em></div>
+            </article>
+
+            <article data-hyp="03">
+              <div data-hyp-accent></div>
+              <div data-hyp-rank><span>RANK</span><strong>03</strong><em>ALTERNATE</em></div>
+              <div data-hyp-summary>
+                <div class="hyp-title">Feed surge / segregation</div>
+                <p>A momentary feed spike overwhelming the crush zone.</p>
+                <div class="hyp-confidence-label"><span>CONFIDENCE</span><strong>0.09</strong></div>
+                <div class="hyp-confidence-track"><div data-conf="0.09"></div></div>
+              </div>
+              <div data-hyp-evidence>
+                <div data-hyp-detail><div class="hyp-evidence-label support">SUPPORTING · 01</div><p>Feeder speed spike at 14:22</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label conflict">CONTRADICTING · 02</div><p>Size sustained past surge<br>No level drop in bin</p></div>
+                <div data-hyp-detail><div class="hyp-evidence-label missing">MISSING · 01</div><p>Feed hopper level trace</p></div>
+              </div>
+              <div data-hyp-score><strong>09</strong><span>%</span><em>LOW FIT</em></div>
+            </article>
           </div>
         </section>
         <!-- SCENE 5 · TOPOLOGY -->
@@ -447,6 +528,10 @@ class Component extends DCLogic {
     this.evidenceFrame = this.q('[data-evidence-frame]');
     this.evidenceMeta = this.q('[data-evidence-meta]');
     this.evRules = this.qa('[data-ev-rule]');
+    this.hypGrid = this.q('[data-hypgrid]');
+    this.hypEvidence = this.qa('[data-hyp-evidence]');
+    this.hypDetails = this.qa('[data-hyp-detail]');
+    this.hypAccents = this.qa('[data-hyp-accent]');
     this.artifactMetrics = this.q('[data-artifact-metrics]');
     this.finalScene = this.q('[data-scene="6"]');
     this.video = this.q('[data-belt-video]');
@@ -528,10 +613,8 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.margin = '18px 0 28px';
       this.evGrid.style.gridTemplateColumns = '1fr';
       this.evGrid.style.gridTemplateRows = 'auto';
-      this.hyps.forEach(h => {
-        h.style.gridTemplateColumns = '1fr';
-        if (h.children[2]) h.children[2].style.gridTemplateColumns = '1fr';
-      });
+      this.hyps.forEach(h => { h.style.gridTemplateColumns = '42px minmax(0,1fr)'; });
+      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = '1fr'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
       this.finalScene.style.flexDirection = 'column';
@@ -554,6 +637,12 @@ class Component extends DCLogic {
       this.evRules.forEach(rule => rule.style.transform = 'scaleX(1)');
       (this.sparkPaths || []).forEach(path => path.setAttribute('stroke-dashoffset', 0));
       this.hyps.forEach(h => h.style.opacity = 1);
+      if (this.hypGrid) {
+        this.hypGrid.style.opacity = 1;
+        this.hypGrid.style.transform = 'none';
+      }
+      this.hypDetails.forEach(d => d.style.opacity = 1);
+      this.hypAccents.forEach(a => a.style.transform = 'scaleY(1)');
       this.confs.forEach(c => c.style.width = (parseFloat(c.dataset.conf) * 100) + '%');
       this.setTopo(1);
       this.setSizeStatic();
@@ -586,10 +675,8 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.margin = '';
       this.evGrid.style.gridTemplateColumns = '1.12fr 1fr 1fr';
       this.evGrid.style.gridTemplateRows = 'repeat(2,minmax(134px,1fr))';
-      this.hyps.forEach(h => {
-        h.style.gridTemplateColumns = '56px 1.15fr 2fr';
-        if (h.children[2]) h.children[2].style.gridTemplateColumns = 'repeat(3,1fr)';
-      });
+      this.hyps.forEach(h => { h.style.gridTemplateColumns = '74px minmax(255px,.9fr) minmax(500px,1.65fr) 92px'; });
+      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1.75fr .75fr';
       this.artifactMetrics.style.gridTemplateColumns = 'repeat(4,1fr)';
       this.finalScene.style.flexDirection = '';
@@ -811,6 +898,36 @@ class Component extends DCLogic {
     });
   }
 
+  setHypotheses(t) {
+    const frameT = this.ss(this.norm(t, 0, 0.18));
+    if (this.hypGrid) {
+      this.hypGrid.style.opacity = frameT;
+      this.hypGrid.style.transform = 'translateY(' + ((1 - frameT) * 10) + 'px)';
+    }
+
+    this.hyps.forEach((h, i) => {
+      const start = 0.06 + i * 0.16;
+      const reveal = this.ss(this.norm(t, start, start + 0.28));
+      const accent = this.ss(this.norm(t, start + 0.04, start + 0.31));
+      h.style.opacity = reveal;
+      h.style.transform = 'translateY(' + ((1 - reveal) * 12) + 'px)';
+      if (this.hypAccents[i]) this.hypAccents[i].style.transform = 'scaleY(' + accent + ')';
+
+      const details = Array.prototype.slice.call(h.querySelectorAll('[data-hyp-detail]'));
+      details.forEach((detail, j) => {
+        detail.style.opacity = this.ss(this.norm(t, start + 0.10 + j * 0.025, start + 0.34 + j * 0.025));
+      });
+
+      const conf = h.querySelector('[data-conf]');
+      if (conf) {
+        const target = parseFloat(conf.dataset.conf) * 100;
+        const confidenceT = this.ss(this.norm(t, start + 0.10, start + 0.38));
+        conf.style.width = (target * confidenceT) + '%';
+        conf.style.transition = 'none';
+      }
+    });
+  }
+
   // ---------- frame ----------
   frame(now) {
     if (this.mode === 'sequence') { this.ctx.clearRect(0, 0, this.vw, this.vh); return; }
@@ -884,17 +1001,8 @@ class Component extends DCLogic {
 
     // evidence dossier: establish the frame, then reveal findings in reading order
     this.setEvidence(evidenceT);
-    // hypotheses stagger + confidence bars
-    this.hyps.forEach((h, i) => {
-      const lt = this.clamp((hypoT - i * 0.16) / 0.4, 0, 1);
-      h.style.opacity = this.ss(lt);
-      h.style.transform = 'translateY(' + ((1 - this.ss(lt)) * 22) + 'px)';
-    });
-    this.confs.forEach(c => {
-      const target = parseFloat(c.dataset.conf) * 100;
-      c.style.width = (target * this.ss(this.clamp((hypoT - 0.15) / 0.5, 0, 1))) + '%';
-      c.style.transition = 'none';
-    });
+    // root-cause assessment: reveal rank, evidence ledger, then confidence
+    this.setHypotheses(hypoT);
     // topology
     this.setTopo(topoT);
 
