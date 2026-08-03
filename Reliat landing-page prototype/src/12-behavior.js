@@ -63,7 +63,7 @@ class Component extends DCLogic {
 
     const src = this.props && this.props.beltVideoSrc;
     if (src) { this.video.src = src; this.video.style.display = 'block'; this.video.play().catch(() => {}); }
-    this.accent = (this.props && this.props.accentColor) || '#00BF63';
+    this.accent = (this.props && this.props.accentColor) || '#218157';
 
     this.p = 0; this.target = 0; this._lastFrame = performance.now();
     this.mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -264,7 +264,7 @@ class Component extends DCLogic {
     const uslX = ml + (this.usl / this.maxMm) * pw;
     s.appendChild(this.el('rect', { x: ml, y: mt, width: uslX - ml, height: ph, fill: 'rgba(126,217,87,.16)' }));
     s.appendChild(this.el('rect', { x: uslX, y: mt, width: ml + pw - uslX, height: ph, fill: 'rgba(193,255,114,.18)' }));
-    s.appendChild(this.el('line', { x1: uslX, y1: mt, x2: uslX, y2: mt + ph, stroke: '#00BF63', 'stroke-width': 2, 'stroke-dasharray': '6 5' }));
+    s.appendChild(this.el('line', { x1: uslX, y1: mt, x2: uslX, y2: mt + ph, stroke: '#218157', 'stroke-width': 2, 'stroke-dasharray': '6 5' }));
     const bw = pw / this.bins.length;
     this.bins.forEach((cnt, b) => {
       const hgt = (cnt / this.maxCount) * ph;
@@ -272,7 +272,7 @@ class Component extends DCLogic {
       s.appendChild(this.el('rect', { x: ml + b * bw + bw * 0.16, y: mt + ph - hgt, width: bw * 0.68, height: hgt, rx: 4, fill: over ? '#7ED957' : '#1F41BB' }));
     });
     s.appendChild(this.el('line', { x1: ml, y1: mt + ph, x2: ml + pw, y2: mt + ph, stroke: 'rgba(31,65,187,.28)', 'stroke-width': 1.5 }));
-    const lbl = this.el('text', { x: uslX, y: mt - 12, fill: '#00BF63', 'font-size': 16, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' }); lbl.textContent = 'USL 90mm'; s.appendChild(lbl);
+    const lbl = this.el('text', { x: uslX, y: mt - 12, fill: '#218157', 'font-size': 16, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' }); lbl.textContent = 'USL 90mm'; s.appendChild(lbl);
     this.sizeSvgHost.appendChild(s);
   }
   setSizeStatic() {}
@@ -309,7 +309,7 @@ class Component extends DCLogic {
       const base = this.el('path', { d: d, fill: 'none', stroke: e.loop ? 'rgba(31,65,187,.35)' : 'rgba(16,23,40,.20)', 'stroke-width': e.loop ? 1.25 : 1.5, 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke' });
       if (e.dashed || e.loop) base.setAttribute('stroke-dasharray', '6 7');
       s.appendChild(base);
-      const hot = this.el('path', { d: d, fill: 'none', stroke: '#00BF63', 'stroke-width': 2.5, 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1, opacity: 0 });
+      const hot = this.el('path', { d: d, fill: 'none', stroke: '#218157', 'stroke-width': 2.5, 'stroke-linecap': 'square', 'vector-effect': 'non-scaling-stroke', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1, opacity: 0 });
       if (e.o >= 0) s.appendChild(hot);
       if (e.loop) {
         const t = this.el('text', { x: (A.x + B.x) / 2, y: 72, fill: '#1F41BB', 'font-size': 11, 'letter-spacing': 1.2, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle' });
@@ -328,7 +328,7 @@ class Component extends DCLogic {
       code.textContent = n.code;
       const label = this.el('text', { x: n.x, y: n.y + 22, fill: '#260E69', 'font-size': 11, 'font-family': 'Sora, sans-serif', 'text-anchor': 'middle' });
       label.textContent = n.label;
-      const dot = this.el('circle', { cx: n.x + 48, cy: n.y - 22, r: 3.5, fill: '#00BF63', opacity: 0 });
+      const dot = this.el('circle', { cx: n.x + 48, cy: n.y - 22, r: 3.5, fill: '#218157', opacity: 0 });
       g.appendChild(box); g.appendChild(index); g.appendChild(code); g.appendChild(label); g.appendChild(dot); s.appendChild(g);
       this.nodeEls[key] = { box: box, index: index, code: code, label: label, dot: dot };
     });
@@ -339,7 +339,7 @@ class Component extends DCLogic {
       { key: 'ml01', txt: '+1m47s' }
     ].map(o => {
       const n = N[o.key];
-      const t = this.el('text', { x: n.x, y: n.y + 57, fill: '#00BF63', 'font-size': 10.5, 'letter-spacing': .8, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle', opacity: 0 });
+      const t = this.el('text', { x: n.x, y: n.y + 57, fill: '#218157', 'font-size': 10.5, 'letter-spacing': .8, 'font-family': 'IBM Plex Mono, monospace', 'text-anchor': 'middle', opacity: 0 });
       t.textContent = o.txt; s.appendChild(t);
       return { el: t, key: o.key };
     });
@@ -380,7 +380,7 @@ class Component extends DCLogic {
       [0, 5, 5, 8, 6, 10, 20, 60, 110, 135, 140, 138],
       [2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4]
     ];
-    const colors = ['#00BF63', '#00BF63', '#00BF63', '#00BF63', '#7ED957'];
+    const colors = ['#218157', '#218157', '#218157', '#218157', '#7ED957'];
     this.sparkPaths = [];
     this.qa('[data-spark]').forEach((host, idx) => {
       const d = data[idx] || data[0];
@@ -625,7 +625,7 @@ class Component extends DCLogic {
     ctx.fillRect(uslX, mt, ml + pw - uslX, ph);
     // USL line
     ctx.globalAlpha = this.clamp(resolveT * 1.4, 0, 1);
-    ctx.setLineDash([6, 5]); ctx.strokeStyle = '#00BF63'; ctx.lineWidth = 2;
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = '#218157'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(uslX, mt - 6); ctx.lineTo(uslX, mt + ph); ctx.stroke();
     ctx.setLineDash([]);
     // baseline
@@ -677,7 +677,7 @@ class Component extends DCLogic {
     // anomaly bracket box
     if (anomalyT > 0.05) {
       ctx.globalAlpha = anomalyT;
-      ctx.strokeStyle = '#00BF63'; ctx.lineWidth = 2;
+      ctx.strokeStyle = '#218157'; ctx.lineWidth = 2;
       const boxX = uslX + 4, boxW = ml + pw - uslX - 4;
       this.rr(ctx, boxX, mt - 4, boxW, ph + 8, 8); ctx.stroke();
       ctx.globalAlpha = 1;
