@@ -49,6 +49,9 @@ class Component extends DCLogic {
     this.topoHost = this.q('[data-topo]');
     this.topologyGrid = this.q('[data-topology-grid]');
     this.evGrid = this.q('[data-evgrid]');
+    this.evidenceFrame = this.q('[data-evidence-frame]');
+    this.evidenceMeta = this.q('[data-evidence-meta]');
+    this.evRules = this.qa('[data-ev-rule]');
     this.artifactMetrics = this.q('[data-artifact-metrics]');
     this.finalScene = this.q('[data-scene="6"]');
     this.video = this.q('[data-belt-video]');
@@ -129,6 +132,7 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.inset = 'auto';
       this.sizeSvgHost.style.margin = '18px 0 28px';
       this.evGrid.style.gridTemplateColumns = '1fr';
+      this.evGrid.style.gridTemplateRows = 'auto';
       this.hyps.forEach(h => {
         h.style.gridTemplateColumns = '1fr';
         if (h.children[2]) h.children[2].style.gridTemplateColumns = '1fr';
@@ -147,6 +151,13 @@ class Component extends DCLogic {
       });
       this.copies.forEach(c => { c.setAttribute('style', c._css + ';position:relative;left:auto;right:auto;top:auto;bottom:auto;inset:auto;opacity:1;transform:none;background:transparent;margin-bottom:18px'); });
       this.evs.forEach(e => e.style.opacity = 1);
+      if (this.evidenceFrame) {
+        this.evidenceFrame.style.opacity = 1;
+        this.evidenceFrame.style.transform = 'none';
+      }
+      if (this.evidenceMeta) this.evidenceMeta.style.opacity = 1;
+      this.evRules.forEach(rule => rule.style.transform = 'scaleX(1)');
+      (this.sparkPaths || []).forEach(path => path.setAttribute('stroke-dashoffset', 0));
       this.hyps.forEach(h => h.style.opacity = 1);
       this.confs.forEach(c => c.style.width = (parseFloat(c.dataset.conf) * 100) + '%');
       this.setTopo(1);
@@ -166,6 +177,7 @@ class Component extends DCLogic {
       this.world.style.transition = 'none';
       this.copies.forEach(c => { c.setAttribute('style', c._css + ';transition:none'); });
       this.evs.forEach(e => { e.style.transition = 'none'; });
+      if (this.evidenceFrame) this.evidenceFrame.style.transition = 'none';
       this.hyps.forEach(hh => { hh.style.transition = 'none'; });
       this.canvas.style.display = 'block';
       this.chip.style.display = 'flex';
@@ -177,7 +189,8 @@ class Component extends DCLogic {
       this.sizeSvgHost.style.position = 'absolute';
       this.sizeSvgHost.style.inset = '0';
       this.sizeSvgHost.style.margin = '';
-      this.evGrid.style.gridTemplateColumns = 'repeat(5,1fr)';
+      this.evGrid.style.gridTemplateColumns = '1.12fr 1fr 1fr';
+      this.evGrid.style.gridTemplateRows = 'repeat(2,minmax(134px,1fr))';
       this.hyps.forEach(h => {
         h.style.gridTemplateColumns = '56px 1.15fr 2fr';
         if (h.children[2]) h.children[2].style.gridTemplateColumns = 'repeat(3,1fr)';
@@ -362,10 +375,11 @@ class Component extends DCLogic {
       [2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4]
     ];
     const colors = ['#00BF63', '#00BF63', '#00BF63', '#00BF63', '#7ED957'];
+    this.sparkPaths = [];
     this.qa('[data-spark]').forEach((host, idx) => {
       const d = data[idx] || data[0];
-      const W = 200, H = 40;
-      const s = this.svg(W, H); s.setAttribute('preserveAspectRatio', 'none'); s.style.height = '40px';
+      const W = 200, H = parseFloat(host.dataset.sparkHeight) || 40;
+      const s = this.svg(W, H); s.setAttribute('preserveAspectRatio', 'none'); s.style.height = H + 'px';
       const mn = Math.min.apply(null, d), mx = Math.max.apply(null, d);
       const rng = (mx - mn) || 1;
       let path = '';
@@ -374,8 +388,31 @@ class Component extends DCLogic {
         const y = H - 4 - ((v - mn) / rng) * (H - 8);
         path += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
       });
-      s.appendChild(this.el('path', { d: path, fill: 'none', stroke: colors[idx], 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+      s.appendChild(this.el('line', { x1: 0, y1: H - 1, x2: W, y2: H - 1, stroke: 'rgba(16,23,40,.12)', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }));
+      const spark = this.el('path', { d: path, fill: 'none', stroke: colors[idx], 'stroke-width': idx === 0 ? 2 : 1.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'square', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1, 'vector-effect': 'non-scaling-stroke' });
+      s.appendChild(spark);
+      this.sparkPaths.push(spark);
       host.appendChild(s);
+    });
+  }
+
+  setEvidence(t) {
+    const frameT = this.ss(this.norm(t, 0, 0.18));
+    if (this.evidenceFrame) {
+      this.evidenceFrame.style.opacity = frameT;
+      this.evidenceFrame.style.transform = 'translateY(' + ((1 - frameT) * 10) + 'px)';
+    }
+    if (this.evidenceMeta) this.evidenceMeta.style.opacity = this.ss(this.norm(t, 0.08, 0.28));
+
+    this.evs.forEach((e, i) => {
+      const start = i === 0 ? 0.08 : 0.18 + (i - 1) * 0.12;
+      const reveal = this.ss(this.norm(t, start, start + 0.30));
+      const line = this.ss(this.norm(t, start + 0.08, start + 0.38));
+      const chart = this.ss(this.norm(t, start + 0.14, start + 0.46));
+      e.style.opacity = reveal;
+      e.style.transform = 'translateY(' + ((1 - reveal) * 13) + 'px)';
+      if (this.evRules[i]) this.evRules[i].style.transform = 'scaleX(' + line + ')';
+      if (this.sparkPaths[i]) this.sparkPaths[i].setAttribute('stroke-dashoffset', 1 - chart);
     });
   }
 
@@ -446,16 +483,12 @@ class Component extends DCLogic {
     const resolveT = this.ss(this.norm(p, 0.285, 0.375));
     const anomalyT = this.ss(this.norm(p, 0.375, 0.44));
     const pushT = this.ss(this.norm(p, 0.44, 0.49));
-    const evidenceT = this.norm(p, 0.57, 0.665);
+    const evidenceT = this.norm(p, 0.565, 0.67);
     const hypoT = this.norm(p, 0.71, 0.815);
     const topoT = this.norm(p, 0.83, 0.94);
 
-    // evidence stagger
-    this.evs.forEach((e, i) => {
-      const lt = this.clamp((evidenceT - i * 0.12) / 0.35, 0, 1);
-      e.style.opacity = this.ss(lt);
-      e.style.transform = 'translateY(' + ((1 - this.ss(lt)) * 22) + 'px)';
-    });
+    // evidence dossier: establish the frame, then reveal findings in reading order
+    this.setEvidence(evidenceT);
     // hypotheses stagger + confidence bars
     this.hyps.forEach((h, i) => {
       const lt = this.clamp((hypoT - i * 0.16) / 0.4, 0, 1);
