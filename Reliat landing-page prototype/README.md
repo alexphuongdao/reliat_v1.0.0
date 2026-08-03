@@ -1,11 +1,17 @@
 # Landing page prototype — source layout
 
-`Reliat Storyboard.dc.html` is a **build artifact** — generated from the
-files in `src/`. Never hand-edit it directly; regenerate it instead:
+`Reliat Storyboard.dc.html` and `dist/index.html` are **build artifacts** —
+generated from the files in `src/`. Never hand-edit them directly; regenerate
+them instead:
 
 ```bash
 python3 build.py
 ```
+
+`dist/` is the ready-to-host static site. It contains the same page as a
+conventional top-level `index.html`, plus `support.js` and the brand assets it
+needs. Upload the contents of `dist/` to any static host; React or Next.js is
+not required.
 
 ## Why it's split up
 

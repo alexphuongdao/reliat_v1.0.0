@@ -1,36 +1,44 @@
         <!-- SCENE 5 · TOPOLOGY -->
-        <section data-scene="5" data-screen-label="Propagation topology" style="flex:0 0 100vw;height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 6vw">
-          <div data-copy="topo" style="margin-bottom:20px;max-width:760px">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.24em;color:#c96a4a;margin-bottom:14px">PHASE 02 · PROPAGATION</div>
+        <section data-scene="5" data-screen-label="Propagation topology" style="flex:0 0 100vw;height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 5vw">
+          <div data-copy="topo" style="margin-bottom:18px;max-width:760px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.24em;color:#00BF63;margin-bottom:14px">PHASE 02 · PROPAGATION</div>
             <h2 style="font-size:clamp(28px,3.6vw,54px);line-height:1.04;font-weight:700;letter-spacing:-.015em;margin:0">The same event,<br>traced through the plant.</h2>
           </div>
-          <div style="display:grid;grid-template-columns:1.9fr 1fr;gap:36px;align-items:center;max-width:1440px">
-            <div data-topo style="width:100%"></div>
-            <div data-copy="propagation" style="display:flex;flex-direction:column;gap:18px">
-              <div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6a6250;margin-bottom:10px">PROPAGATION TIMING</div>
-                <div style="display:flex;flex-direction:column;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:13px">
-                  <div style="display:flex;justify-content:space-between"><span>Crusher</span><span style="color:#c96a2a">t0</span></div>
-                  <div style="display:flex;justify-content:space-between"><span>Conveyor CV-02</span><span style="color:#c96a2a">+38 s</span></div>
-                  <div style="display:flex;justify-content:space-between"><span>Screen SC-01</span><span style="color:#c96a2a">+52 s</span></div>
-                  <div style="display:flex;justify-content:space-between"><span>Mill ML-01</span><span style="color:#c96a2a">+1m 47s</span></div>
+          <div data-topology-plate style="width:100%;max-width:1440px;padding:20px 24px 22px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:14px;border-bottom:1px solid rgba(16,23,40,.14);font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;color:#1F41BB">
+              <span>INCIDENT TRACE · INC-26-0417</span>
+              <span style="color:#260E69;letter-spacing:.06em">105 S CAPTURE · 5 LINKED SYSTEMS</span>
+            </div>
+            <div data-topology-grid>
+              <div style="padding:22px 30px 4px 0;min-width:0">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:#1F41BB;margin-bottom:8px">PROCESS PATH / PRIMARY CRUSH A</div>
+                <div data-topo style="width:100%"></div>
+                <div style="display:flex;gap:22px;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#1F41BB;margin-top:-2px">
+                  <span><i style="display:inline-block;width:18px;height:2px;background:#00BF63;vertical-align:middle;margin-right:7px"></i>EVENT PATH</span>
+                  <span><i style="display:inline-block;width:18px;border-top:1px dashed rgba(31,65,187,.55);vertical-align:middle;margin-right:7px"></i>NOMINAL RECIRCULATION</span>
                 </div>
               </div>
-              <div style="height:1px;background:#e6dcc2"></div>
-              <div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6a6250;margin-bottom:10px">EXPOSED ASSETS</div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px">
-                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fbe9a6;color:#8a6a2a;padding:5px 11px;border-radius:6px">ML-01 liners</span>
-                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fbe9a6;color:#8a6a2a;padding:5px 11px;border-radius:6px">ML-01 cyclone</span>
-                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:#fbe9a6;color:#8a6a2a;padding:5px 11px;border-radius:6px">Load-out spec</span>
+              <div data-copy="propagation" data-topology-facts>
+                <div data-fact-block>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:#1F41BB;margin-bottom:11px">ARRIVAL / ELAPSED</div>
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:7px 20px;font-family:'IBM Plex Mono',monospace;font-size:11.5px">
+                    <span>Crusher CR-01</span><span style="color:#00BF63">t0</span>
+                    <span>Conveyor CV-02</span><span style="color:#00BF63">+38 s</span>
+                    <span>Screen SC-01</span><span style="color:#00BF63">+52 s</span>
+                    <span>Mill ML-01</span><span style="color:#00BF63">+1m 47s</span>
+                  </div>
                 </div>
-              </div>
-              <div style="height:1px;background:#e6dcc2"></div>
-              <div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6a6250;margin-bottom:10px">PLAUSIBLE EFFECTS</div>
-                <div style="font-size:13.5px;line-height:1.55;color:#4a463e">Mill overload trip risk within 4 min · accelerated liner wear · downstream spec breach at load-out if uncorrected.</div>
+                <div data-fact-block>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:#1F41BB;margin-bottom:7px">EXPOSED ASSETS</div>
+                  <div data-asset-line><span style="color:#00BF63">01</span><span>ML-01 liners</span></div>
+                  <div data-asset-line><span style="color:#00BF63">02</span><span>ML-01 cyclone</span></div>
+                  <div data-asset-line><span style="color:#00BF63">03</span><span>Load-out specification</span></div>
+                </div>
+                <div data-fact-block>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:#1F41BB;margin-bottom:10px">ENGINEERING NOTE</div>
+                  <div style="border-left:2px solid #C1FF72;padding-left:12px;font-size:12.5px;line-height:1.55;color:#260E69">Mill overload risk inside four minutes. Liner wear accelerates; load-out specification is exposed if the event is not corrected.</div>
+                </div>
               </div>
             </div>
           </div>
         </section>
-
