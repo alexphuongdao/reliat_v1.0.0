@@ -69,3 +69,29 @@ class OutlierOut(BaseModel):
 class OutlierPatch(BaseModel):
     status: Literal["open", "acknowledged", "resolved", "dismissed"] | None = None
     assignee: str | None = None
+
+
+class DiagnosisHypothesis(BaseModel):
+    cause: str
+    confidence: float
+    supportingEvidence: str = Field(alias="supporting_evidence")
+    contradictingEvidence: str | None = Field(default=None, alias="contradicting_evidence")
+
+    model_config = {"populate_by_name": True}
+
+
+class DiagnosisOut(BaseModel):
+    id: str
+    outlierId: str
+    createdAt: int  # epoch ms
+    status: Literal["complete", "error"]
+    model: str
+    rootCause: str
+    confidence: float
+    hypotheses: list[DiagnosisHypothesis]
+    recommendedAction: str
+    evidenceSummary: str
+    inputTokens: int
+    outputTokens: int
+    costUsd: float
+    error: str | None = None

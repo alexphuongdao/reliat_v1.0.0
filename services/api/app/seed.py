@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from .db import init_db, session_scope
 from .etl import PERCENTILE_KEYS, RawRow, ingest_csv, ingest_rows
 from .models import Channel, Measurement, Outlier
+from .tenancy import ensure_default_tenant
 
 # Channel registry — matches the design's CHANNELS list.
 CHANNEL_REGISTRY = [
@@ -39,13 +40,14 @@ PSD_RATIOS = {
 }
 
 
-def upsert_channels(session: Session) -> None:
+def upsert_channels(session: Session, tenant_id: str | None = None) -> None:
+    tenant_id = tenant_id or ensure_default_tenant(session).id
     existing = {row.id for row in session.query(Channel).all()}
     for cid, name, belt, color, base_f80, base_top, online in CHANNEL_REGISTRY:
         if cid in existing:
             continue
         session.add(Channel(
-            id=cid, name=name, belt=belt, color=color,
+            id=cid, tenant_id=tenant_id, name=name, belt=belt, color=color,
             base_f80=base_f80, base_topsize=base_top, online=online, shift="A",
         ))
 

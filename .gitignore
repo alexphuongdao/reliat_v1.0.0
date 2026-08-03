@@ -38,3 +38,6 @@ yarn-error.log*
 
 # Claude Code session-local settings (keep .claude/settings.json — project config)
 .claude/settings.local.json
+
+# Temporary opt-out marker for the build-log Stop hook (expires after 90 min)
+.claude/.skip-build-log

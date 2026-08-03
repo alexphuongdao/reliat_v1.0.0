@@ -664,3 +664,93 @@ export function StatusPill({ status }: { status: string }) {
     </span>
   );
 }
+
+// ─── Spinner ─────────────────────────────────────────────────────────
+/** Indeterminate ring. Keyframes live in globals.css (inline styles can't
+ *  express one); reduced-motion callers get a static ring instead. */
+export function Spinner({ size = 16, color = "var(--accent)" }: { size?: number; color?: string }) {
+  return (
+    <span
+      className="reliat-spinner"
+      role="status"
+      aria-label="Loading"
+      style={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        border: `${Math.max(1.5, size / 9)}px solid var(--border-strong)`,
+        borderTopColor: color,
+        animation: "reliat-spin 0.7s linear infinite",
+      }}
+    />
+  );
+}
+
+// ─── ScreenLoading ───────────────────────────────────────────────────
+/** Full-surface loading state for screens backed by the API.
+ *
+ *  Exists so a screen never renders placeholder data while the real data is
+ *  in flight — showing the design mock for a second and then swapping it for
+ *  live numbers reads as the app changing its mind about the facts. */
+export function ScreenLoading({ label = "Loading…" }: { label?: string }) {
+  return (
+    <div
+      style={{
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        gap: 12, height: "100%", minHeight: 280,
+        color: "var(--text-3)",
+      }}
+    >
+      <Spinner size={22} />
+      <span style={{ fontSize: 12.5 }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── ScreenError ─────────────────────────────────────────────────────
+/** Honest failure state. Deliberately not a mock-data fallback: once the
+ *  app is multi-tenant, quietly rendering demo numbers when the API is
+ *  unreachable is indistinguishable from rendering someone else's plant. */
+export function ScreenError({
+  label = "Couldn't load this data.",
+  detail,
+  onRetry,
+}: {
+  label?: string;
+  detail?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        gap: 10, height: "100%", minHeight: 280, padding: 24,
+        textAlign: "center",
+      }}
+    >
+      <span style={{ fontSize: 13.5, color: "var(--text-1)", fontWeight: 500 }}>{label}</span>
+      {detail && (
+        <span className="mono" style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+          {detail}
+        </span>
+      )}
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          style={{
+            marginTop: 4, padding: "7px 14px",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border-strong)",
+            borderRadius: "var(--r-sm)",
+            fontSize: 12.5, color: "var(--text-1)", cursor: "pointer",
+          }}
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}

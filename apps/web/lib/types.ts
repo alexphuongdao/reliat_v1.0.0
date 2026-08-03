@@ -49,6 +49,31 @@ export interface Outlier {
   indexInSeries: number;
 }
 
+// ─── Diagnostic Agent ───────────────────────────────────────────────
+export interface DiagnosisHypothesis {
+  cause: string;
+  confidence: number;
+  supportingEvidence: string;
+  contradictingEvidence: string | null;
+}
+
+export interface Diagnosis {
+  id: string;
+  outlierId: string;
+  createdAt: number;
+  status: "complete" | "error";
+  model: string;
+  rootCause: string;
+  confidence: number;
+  hypotheses: DiagnosisHypothesis[];
+  recommendedAction: string;
+  evidenceSummary: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  error: string | null;
+}
+
 // ─── Agent ──────────────────────────────────────────────────────────
 export interface AgentRef {
   kind: "outlier" | "channel";

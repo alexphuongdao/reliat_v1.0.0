@@ -1,0 +1,23 @@
+<div data-root ref="{{ setRoot }}" style="position:relative;background:#fff8e7">
+
+  <!-- fixed chrome -->
+  <div data-chrome style="position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 28px;pointer-events:none">
+    <div style="display:flex;align-items:center;gap:10px;pointer-events:auto">
+      <div style="width:11px;height:11px;border-radius:50%;background:#c96a4a"></div>
+      <span style="font-weight:700;letter-spacing:.24em;font-size:15px">RELIAT</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;pointer-events:auto">
+      <div data-progress-wrap style="width:120px;height:3px;background:rgba(32,32,28,.12);border-radius:2px;overflow:hidden">
+        <div data-progress style="height:100%;width:0%;background:#c96a4a"></div>
+      </div>
+      <button data-reduce type="button" onClick="{{ toggleReduced }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;color:#6a6250;background:rgba(255,255,255,.6);border:1px solid #e6dcc2;border-radius:20px;padding:6px 12px;cursor:pointer">Motion: full</button>
+      <a href="http://localhost:3300/outliers" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.06em;color:#fffdf4;background:#c96a4a;border-radius:20px;padding:7px 14px;white-space:nowrap">Enter platform →</a>
+    </div>
+  </div>
+
+  <!-- persistent incident object -->
+  <div data-chip style="position:fixed;left:50%;top:14%;z-index:55;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;display:flex;align-items:center;gap:10px;background:#fffdf4;border:1.5px solid #d98a2a;border-radius:999px;padding:8px 15px 8px 12px;box-shadow:0 10px 30px -12px rgba(201,106,42,.5)">
+    <span style="width:9px;height:9px;border-radius:50%;background:#d98a2a;animation:rdot 1.6s ease-in-out infinite"></span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.03em">INC-26-0417</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a6a2a">oversize&nbsp;bypass</span>
+  </div>

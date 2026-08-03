@@ -13,10 +13,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install dependencies. Includes the [postgres] extra so a Neon /
-# managed-Postgres DATABASE_URL works out of the box.
+# managed-Postgres DATABASE_URL works out of the box, and [xls] for the
+# one-off real-data ingestion script.
 COPY pyproject.toml ./
 COPY app ./app
-RUN pip install ".[postgres]"
+COPY alembic.ini ./
+COPY alembic ./alembic
+RUN pip install ".[postgres,xls]"
 
 # Drop into a non-root user.
 RUN useradd --create-home --shell /bin/bash reliat \

@@ -1,0 +1,85 @@
+name: reliat
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: reliat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reliat_dev_password}
+      POSTGRES_DB: reliat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reliat -d reliat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [reliat]
+
+  api:
+    build:
+      context: services/api
+      dockerfile: Dockerfile
+    environment:
+      RELIAT_DATABASE_URL: postgresql+psycopg://reliat:${POSTGRES_PASSWORD:-reliat_dev_password}@postgres:5432/reliat
+      RELIAT_CORS_ORIGINS: http://localhost:3300,http://127.0.0.1:3300
+      RELIAT_SEED_ON_STARTUP: "false"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY must be set in .env}
+      PORT: "8000"
+      # --- auth ---
+      # Signs the short-lived OAuth state cookie (not the login session).
+      RELIAT_SESSION_SECRET: ${RELIAT_SESSION_SECRET:-reliat_dev_session_secret}
+      # Where the OAuth callback returns the browser to — the UI, not the API.
+      RELIAT_WEB_APP_ORIGIN: http://localhost:3300
+      # Demo profile passwords. Documented in docs/manual.md; override here
+      # (via .env) for anything that isn't a local demo.
+      RELIAT_SEED_CEMEX_PASSWORD: ${RELIAT_SEED_CEMEX_PASSWORD:-Cemex-Reliat-2026!}
+      RELIAT_SEED_ADMIN_PASSWORD: ${RELIAT_SEED_ADMIN_PASSWORD:-Admin-Reliat-2026!}
+      # OAuth providers — blank means "not offered". Fill in to light up the
+      # matching button on the login page.
+      RELIAT_OAUTH_GOOGLE_CLIENT_ID: ${RELIAT_OAUTH_GOOGLE_CLIENT_ID:-}
+      RELIAT_OAUTH_GOOGLE_CLIENT_SECRET: ${RELIAT_OAUTH_GOOGLE_CLIENT_SECRET:-}
+      RELIAT_OAUTH_MICROSOFT_CLIENT_ID: ${RELIAT_OAUTH_MICROSOFT_CLIENT_ID:-}
+      RELIAT_OAUTH_MICROSOFT_CLIENT_SECRET: ${RELIAT_OAUTH_MICROSOFT_CLIENT_SECRET:-}
+      RELIAT_OAUTH_MICROSOFT_TENANT: ${RELIAT_OAUTH_MICROSOFT_TENANT:-common}
+    volumes:
+      - ./services/api/app:/app/app
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [reliat]
+
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:8000
+    environment:
+      # Server-side calls (session verification, the login Server Action)
+      # go container-to-container. `localhost` inside this container is this
+      # container — it has to be the compose service name.
+      API_INTERNAL_BASE: http://api:8000
+    ports:
+      - "3300:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [reliat]
+
+volumes:
+  pgdata:
+
+networks:
+  reliat:
+    driver: bridge

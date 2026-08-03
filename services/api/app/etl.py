@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from .detector import detect_outliers
 from .models import Channel, Measurement, Outlier
+from .tenancy import ensure_default_tenant
 
 PERCENTILE_KEYS = ("F10", "F20", "F30", "F40", "F50", "F60", "F70", "F80", "F90")
 SIEVE_SIZES_MM = (1.0, 2.5, 4.0, 6.3, 9.5, 12.5, 19.0, 25.0, 31.5, 45.0, 63.0, 80.0, 100.0, 125.0, 160.0)
@@ -35,6 +36,14 @@ class RawRow:
     color_hue: float = 24.0
     color_sat: float = 24.0
     color_light: float = 28.0
+    # Real-instrument extras (absent for synthetic rows).
+    source: str = "synthetic"
+    iteration_count: int | None = None
+    sd_ratio_10_5: float | None = None
+    video_r: float | None = None
+    video_g: float | None = None
+    video_b: float | None = None
+    sieve_passing_raw: dict[str, float] | None = None
 
     @property
     def color_hsl(self) -> str:
@@ -109,6 +118,7 @@ def ingest_rows(session: Session, rows: Iterable[RawRow]) -> dict[str, int]:
             # Fallback registration — production sets these via a real config.
             ch = Channel(
                 id=row.channel_id,
+                tenant_id=ensure_default_tenant(session).id,
                 name=row.channel_id.upper(),
                 belt="Unknown",
                 color="var(--ch-1)",
@@ -130,6 +140,13 @@ def ingest_rows(session: Session, rows: Iterable[RawRow]) -> dict[str, int]:
             color_hue=row.color_hue,
             color_sat=row.color_sat,
             color_light=row.color_light,
+            source=row.source,
+            iteration_count=row.iteration_count,
+            sd_ratio_10_5=row.sd_ratio_10_5,
+            video_r=row.video_r,
+            video_g=row.video_g,
+            video_b=row.video_b,
+            sieve_passing_raw=row.sieve_passing_raw,
         )
         session.add(m)
         by_channel.setdefault(row.channel_id, []).append(m)

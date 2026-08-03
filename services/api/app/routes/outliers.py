@@ -5,11 +5,52 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..auth import Principal, get_principal
 from ..db import get_session
-from ..models import Channel, Measurement, Outlier
-from ..schemas import OutlierOut, OutlierPatch
+from ..diagnostic_agent import DiagnosticAgentError, run_diagnosis
+from ..models import Channel, Measurement, Outlier, OutlierDiagnosis
+from ..schemas import DiagnosisOut, OutlierOut, OutlierPatch
 
 router = APIRouter(prefix="/api/outliers", tags=["outliers"])
+
+
+def _owned_outlier(session: Session, outlier_id: str, principal: Principal) -> Outlier:
+    """Fetch an outlier the caller's tenant owns, or 404.
+
+    Ownership is inherited from the outlier's channel — that's the only place
+    `tenant_id` lives. 404 rather than 403 so ids from another tenant aren't
+    confirmable.
+    """
+    q = (
+        session.query(Outlier)
+        .join(Channel, Channel.id == Outlier.channel_id)
+        .filter(Outlier.id == outlier_id)
+    )
+    if principal.tenant_id is not None:
+        q = q.filter(Channel.tenant_id == principal.tenant_id)
+    o = q.first()
+    if o is None:
+        raise HTTPException(404, f"no outlier {outlier_id}")
+    return o
+
+
+def _diagnosis_out(d: OutlierDiagnosis) -> DiagnosisOut:
+    return DiagnosisOut(
+        id=d.id,
+        outlierId=d.outlier_id,
+        createdAt=int(d.created_at.timestamp() * 1000),
+        status=d.status,  # type: ignore[arg-type]
+        model=d.model,
+        rootCause=d.root_cause,
+        confidence=d.confidence,
+        hypotheses=d.hypotheses,  # type: ignore[arg-type]
+        recommendedAction=d.recommended_action,
+        evidenceSummary=d.evidence_summary,
+        inputTokens=d.input_tokens,
+        outputTokens=d.output_tokens,
+        costUsd=d.cost_usd,
+        error=d.error,
+    )
 
 
 def _series_index_for(session: Session, channel_id: str, t_dt) -> int:
@@ -30,6 +71,7 @@ def list_outliers(
     channel_id: str | None = Query(None),
     classification: str | None = Query(None, alias="type"),
     limit: int = Query(500, le=2000),
+    principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
 ) -> list[OutlierOut]:
     stmt = (
@@ -38,6 +80,8 @@ def list_outliers(
         .order_by(Outlier.t.desc())
         .limit(limit)
     )
+    if principal.tenant_id is not None:
+        stmt = stmt.where(Channel.tenant_id == principal.tenant_id)
     if sev:
         stmt = stmt.where(Outlier.sev.in_(sev))
     if status:
@@ -75,11 +119,10 @@ def list_outliers(
 def patch_outlier(
     outlier_id: str,
     body: OutlierPatch,
+    principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
 ) -> OutlierOut:
-    o = session.query(Outlier).filter(Outlier.id == outlier_id).first()
-    if o is None:
-        raise HTTPException(404, f"no outlier {outlier_id}")
+    o = _owned_outlier(session, outlier_id, principal)
     if body.status is not None:
         o.status = body.status
     if body.assignee is not None:
@@ -106,3 +149,39 @@ def patch_outlier(
         action=o.action,
         indexInSeries=_series_index_for(session, o.channel_id, o.t),
     )
+
+
+@router.post("/{outlier_id}/diagnose", response_model=DiagnosisOut)
+def diagnose_outlier(
+    outlier_id: str,
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> DiagnosisOut:
+    """Run the Diagnostic Agent on one outlier and persist the result."""
+    # Ownership check before the model call — this endpoint spends real
+    # Anthropic credits, so an unauthorised id must not get that far.
+    _owned_outlier(session, outlier_id, principal)
+    try:
+        diagnosis = run_diagnosis(session, outlier_id)
+    except DiagnosticAgentError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    session.add(diagnosis)
+    session.commit()
+    session.refresh(diagnosis)
+    return _diagnosis_out(diagnosis)
+
+
+@router.get("/{outlier_id}/diagnoses", response_model=list[DiagnosisOut])
+def list_diagnoses(
+    outlier_id: str,
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> list[DiagnosisOut]:
+    _owned_outlier(session, outlier_id, principal)
+    rows = (
+        session.query(OutlierDiagnosis)
+        .filter(OutlierDiagnosis.outlier_id == outlier_id)
+        .order_by(OutlierDiagnosis.created_at.desc())
+        .all()
+    )
+    return [_diagnosis_out(d) for d in rows]

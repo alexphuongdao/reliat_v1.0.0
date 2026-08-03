@@ -11,8 +11,10 @@
  * schemas were designed to match these field names — no adapter layer
  * is needed).
  */
+import type { SessionUser } from "./session.types";
 import type {
   Channel,
+  Diagnosis,
   Outlier,
   OutlierStatus,
   PsdSnapshot,
@@ -23,19 +25,50 @@ const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
+/**
+ * Every request carries the session cookie. The API is a different origin
+ * (port 3300 vs 8000), so the browser only attaches it when we ask with
+ * `credentials: "include"` AND the API names our exact origin back in
+ * `Access-Control-Allow-Origin` — hence `RELIAT_CORS_ORIGINS` in compose.
+ */
+const CREDENTIALED: RequestInit = { credentials: "include", cache: "no-store" };
+
+/**
+ * A 401 means the session died out from under the page (expired, revoked,
+ * or the API restarted). Bounce to login rather than letting screens render
+ * an empty state that looks like "this customer has no data".
+ */
+function guardAuth(res: Response, path: string): void {
+  if (res.status === 401 && typeof window !== "undefined") {
+    const next = encodeURIComponent(window.location.pathname);
+    window.location.href = `/login?next=${next}`;
+    throw new Error(`unauthenticated on ${path}`);
+  }
+}
+
 async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}${path}`, CREDENTIALED);
+  guardAuth(res, path);
   if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
 
 async function patchJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
+    ...CREDENTIALED,
     method: "PATCH",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+  guardAuth(res, path);
   if (!res.ok) throw new Error(`PATCH ${path} → ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+async function postJSON<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { ...CREDENTIALED, method: "POST" });
+  guardAuth(res, path);
+  if (!res.ok) throw new Error(`POST ${path} → ${res.status}`);
   return res.json() as Promise<T>;
 }
 
@@ -83,4 +116,12 @@ export const api = {
     id: string,
     body: { status?: OutlierStatus; assignee?: string | null },
   ) => patchJSON<Outlier>(`/api/outliers/${encodeURIComponent(id)}`, body),
+
+  diagnoseOutlier: (id: string) =>
+    postJSON<Diagnosis>(`/api/outliers/${encodeURIComponent(id)}/diagnose`),
+
+  diagnoses: (id: string) =>
+    getJSON<Diagnosis[]>(`/api/outliers/${encodeURIComponent(id)}/diagnoses`),
+
+  me: () => getJSON<SessionUser>("/api/auth/me"),
 };

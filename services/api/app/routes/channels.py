@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from ..auth import Principal, get_principal
 from ..db import get_session
 from ..models import Channel, Measurement, Outlier
 from ..schemas import ChannelOut, PsdPercentile, PsdSieve, PsdSnapshot, SeriesPoint
@@ -21,9 +22,30 @@ RANGE_MINUTES = {
 }
 
 
+def owned_channel(session: Session, channel_id: str, principal: Principal) -> Channel:
+    """Fetch a channel the caller is allowed to see, or 404.
+
+    404 rather than 403 on a cross-tenant id: a customer shouldn't be able to
+    probe which channel ids exist in another customer's plant.
+    """
+    q = session.query(Channel).filter(Channel.id == channel_id)
+    if principal.tenant_id is not None:
+        q = q.filter(Channel.tenant_id == principal.tenant_id)
+    ch = q.first()
+    if ch is None:
+        raise HTTPException(404, f"no channel {channel_id}")
+    return ch
+
+
 @router.get("", response_model=list[ChannelOut])
-def list_channels(session: Session = Depends(get_session)) -> list[ChannelOut]:
-    rows = session.query(Channel).order_by(Channel.id).all()
+def list_channels(
+    principal: Principal = Depends(get_principal),
+    session: Session = Depends(get_session),
+) -> list[ChannelOut]:
+    q = session.query(Channel)
+    if principal.tenant_id is not None:
+        q = q.filter(Channel.tenant_id == principal.tenant_id)
+    rows = q.order_by(Channel.id).all()
     return [
         ChannelOut(
             id=c.id, name=c.name, belt=c.belt, color=c.color,
@@ -38,10 +60,12 @@ def list_channels(session: Session = Depends(get_session)) -> list[ChannelOut]:
 def get_series(
     channel_id: str,
     range: str = Query("24h", description="One of 1h, shift, 24h, 7d, 30d"),
+    principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
 ) -> list[SeriesPoint]:
     if range not in RANGE_MINUTES:
         raise HTTPException(400, f"unknown range '{range}'")
+    owned_channel(session, channel_id, principal)
     minutes = RANGE_MINUTES[range]
 
     ms = (
@@ -84,8 +108,10 @@ def get_series(
 def get_psd(
     channel_id: str,
     t: int | None = Query(None, description="epoch ms; defaults to latest sample"),
+    principal: Principal = Depends(get_principal),
     session: Session = Depends(get_session),
 ) -> PsdSnapshot:
+    owned_channel(session, channel_id, principal)
     q = session.query(Measurement).filter(Measurement.channel_id == channel_id)
     if t is not None:
         target = datetime.fromtimestamp(t / 1000.0, tz=timezone.utc)

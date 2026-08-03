@@ -21,9 +21,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, Icon, SevGlyph, StatusPill } from "../ui";
+import { Button, Icon, SevGlyph, Spinner, StatusPill } from "../ui";
+import { api } from "../../lib/api";
 import { fmtAge, fmtNum, fmtTime } from "../../lib/format";
-import type { Channel, Outlier, Severity } from "../../lib/types";
+import type { Channel, Diagnosis, Outlier, Severity } from "../../lib/types";
 
 export interface OutliersScreenProps {
   channels: Channel[];
@@ -447,6 +448,26 @@ function OutlierInboxRow({
   onFocus, onToggleSelect, onToggleExpand, onOpenChannel, onAsk,
 }: InboxRowProps) {
   const channel = channels.find((c) => c.id === o.channelId);
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [diagError, setDiagError] = useState<string | null>(null);
+
+  async function runDiagnosis() {
+    setDiagLoading(true);
+    setDiagError(null);
+    try {
+      const d = await api.diagnoseOutlier(o.id);
+      if (d.status === "error") {
+        setDiagError(d.error || "diagnosis failed");
+      } else {
+        setDiagnosis(d);
+      }
+    } catch (err) {
+      setDiagError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDiagLoading(false);
+    }
+  }
   return (
     <div
       onMouseEnter={onFocus}
@@ -552,14 +573,67 @@ function OutlierInboxRow({
         >
           <div>
             <SectionLabel icon="sparkle">AI explanation</SectionLabel>
-            <p
-              style={{
-                fontSize: 13, color: "var(--text-2)", lineHeight: 1.6,
-                margin: "0 0 14px", textWrap: "pretty" as CSSProperties["textWrap"],
-              }}
-            >
-              {o.summary}
-            </p>
+            {diagnosis ? (
+              <div style={{ margin: "0 0 14px" }}>
+                <p style={{ fontSize: 13, color: "var(--text-1)", lineHeight: 1.6, margin: "0 0 10px" }}>
+                  {diagnosis.rootCause}
+                </p>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {diagnosis.hypotheses.map((h, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: 12, color: "var(--text-2)", lineHeight: 1.5,
+                        background: "var(--surface-2)", border: "1px solid var(--border)",
+                        borderRadius: "var(--r-sm)", padding: "8px 10px",
+                      }}
+                    >
+                      <span style={{ color: "var(--text-1)", fontWeight: 600 }}>
+                        {h.cause}
+                      </span>{" "}
+                      <span className="mono muted">{Math.round(h.confidence * 100)}%</span>
+                      <div style={{ marginTop: 4 }}>{h.supportingEvidence}</div>
+                      {h.contradictingEvidence && (
+                        <div style={{ marginTop: 2, color: "var(--text-3)" }}>
+                          Contradicting: {h.contradictingEvidence}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mono" style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 6 }}>
+                  {diagnosis.model} · {diagnosis.inputTokens + diagnosis.outputTokens} tokens · ${diagnosis.costUsd.toFixed(4)}
+                </div>
+              </div>
+            ) : (
+              <p
+                style={{
+                  fontSize: 13, color: "var(--text-2)", lineHeight: 1.6,
+                  margin: "0 0 8px", textWrap: "pretty" as CSSProperties["textWrap"],
+                }}
+              >
+                {o.summary}
+              </p>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14 }}>
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon="sparkle"
+                onClick={runDiagnosis}
+                disabled={diagLoading}
+              >
+                {diagLoading ? "Running Diagnostic Agent…" : diagnosis ? "Re-run Diagnostic Agent" : "Run Diagnostic Agent"}
+              </Button>
+              {/* Model calls take several seconds — a disabled button alone
+                  reads as a dead button. */}
+              {diagLoading && <Spinner size={13} />}
+            </div>
+            {diagError && (
+              <p style={{ fontSize: 12, color: "var(--sev-critical)", margin: "-8px 0 14px" }}>
+                {diagError}
+              </p>
+            )}
 
             <SectionLabel icon="zap">Predicted downstream effect</SectionLabel>
             <p
@@ -636,7 +710,8 @@ function OutlierInboxRow({
                 fontSize: 12.5, color: "var(--text-2)",
               }}
             >
-              <span style={{ color: "var(--accent-bright)", fontWeight: 600 }}>Agent suggests:</span> {o.action}
+              <span style={{ color: "var(--accent-bright)", fontWeight: 600 }}>Agent suggests:</span>{" "}
+              {diagnosis ? diagnosis.recommendedAction : o.action}
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ detector — the contract (a sequence of `Outlier` rows with `sev`, `type`,
 from __future__ import annotations
 
 import math
+import uuid
 from collections.abc import Iterable
 
 from .models import Channel, Measurement, Outlier
@@ -57,7 +58,7 @@ def detect_outliers(channel: Channel, samples: list[Measurement]) -> Iterable[Ou
         if sev is None:
             continue
         counter += 1
-        out_id = f"OUT-{(2400 + _hash_to_int(channel.id, m.t.isoformat()) + counter) % (36 ** 4):X}"
+        out_id = f"OUT-{uuid.uuid4().hex[:12].upper()}"
         dur = f"{2 + (counter % 6)}m {(10 + counter * 7) % 60:02d}s"
         confidence = min(0.98, 0.55 + min(absdev, 6.0) / 12.0)
         yield Outlier(
@@ -129,11 +130,3 @@ def _stats(values: list[float]) -> tuple[float, float]:
     mean = sum(values) / n
     var = sum((v - mean) ** 2 for v in values) / n
     return mean, math.sqrt(var)
-
-
-def _hash_to_int(*parts: str) -> int:
-    h = 0
-    for p in parts:
-        for ch in p:
-            h = (h * 131 + ord(ch)) & 0xFFFFFFFF
-    return h

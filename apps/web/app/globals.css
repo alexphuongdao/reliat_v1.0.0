@@ -7,3 +7,18 @@
  * a `:hover` / `@media` rule needs them.
  */
 @import "../styles/tokens.css";
+
+/* The one exception to "no styles in this file": a keyframe can't be
+ * expressed inline, and the `Spinner` primitive in components/ui.tsx needs
+ * one. Respects reduced-motion by falling back to a static ring. */
+@keyframes reliat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reliat-spinner {
+    animation: none !important;
+  }
+}

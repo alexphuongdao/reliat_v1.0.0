@@ -64,7 +64,10 @@ export function ChannelsScreen({
     if (initialChannelId) setChannelId(initialChannelId);
   }, [initialChannelId]);
 
-  const channel = CHANNELS.find((c) => c.id === channelId)!;
+  const channel = CHANNELS.find((c) => c.id === channelId) ?? CHANNELS[0];
+  if (!channel) {
+    return <div style={{ padding: 24, color: "var(--text-2)" }}>No channels available.</div>;
+  }
   const series = SERIES[channelId] || [];
   const windowSize = RANGE_WINDOW[range];
   const visible = series.slice(-windowSize);
@@ -723,4 +726,3 @@ function MetricChooser({
     </span>
   );
 }
-
