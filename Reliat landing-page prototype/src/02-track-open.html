@@ -1,9 +1,24 @@
 
-  <!-- scroll track -->
-  <div data-track style="position:relative;height:1500vh">
-    <div data-pin style="position:fixed;top:0;left:0;width:100vw;height:100vh;overflow:hidden">
+  <!-- cinematic material-entry prelude -->
+  <div data-mine-track>
+    <div data-mine-pin>
+      <video data-mine-video muted playsinline preload="auto" aria-label="A mine haul truck pours rock into a primary crusher hopper">
+        <source src="./assets/video/mine-hero-desktop.mp4" type="video/mp4">
+      </video>
+      <div data-mine-shade></div>
+      <div data-mine-copy>
+        <div data-mine-kicker>MATERIAL ENTRY · PRIMARY CRUSH</div>
+        <h1>Every incident<br>starts upstream.</h1>
+      </div>
+      <div data-mine-scroll aria-hidden="true"><i></i><span>Scroll to follow the material</span></div>
+      <div data-mine-transition></div>
+    </div>
+  </div>
 
-      <video data-belt-video muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;display:none"></video>
+  <!-- incident-story scroll track -->
+  <div data-track style="position:relative;height:1500vh">
+    <div data-pin style="position:fixed;top:0;left:0;width:100vw;height:100vh;overflow:hidden;visibility:hidden">
+
       <canvas data-canvas style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none"></canvas>
 
-      <div data-world style="position:absolute;top:0;left:0;height:100%;display:flex;flex-wrap:nowrap;z-index:3;will-change:transform">
+      <div data-world style="position:absolute;top:0;left:0;height:100%;display:flex;flex-wrap:nowrap;will-change:transform">

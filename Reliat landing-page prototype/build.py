@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Reassembles src/*.html + src/12-behavior.js into the single file the
-runtime (support.js) actually serves: "Reliat Storyboard.dc.html".
+"""Build the landing page from editable source into a deployable site.
 
-Why this exists: the storyboard is a single-file component contract for a
-custom <x-dc> runtime (helmet/style, {{ }} bindings, a <script
-type="text/x-dc" data-props="..."> block). That contract is not something to
-hand-modify around — this script just concatenates the ordered parts in
-src/MANIFEST.txt back into one file, byte for byte. Edit the parts, run this,
-refresh the browser. Never hand-edit "Reliat Storyboard.dc.html" directly —
-it's a build artifact and will be overwritten.
+The page is a single-file component contract for the custom ``<x-dc>``
+runtime in ``public/support.js``. The ordered files in ``src/MANIFEST.txt``
+are concatenated byte-for-byte into ``dist/index.html``; everything in
+``public/`` is then copied beside it with the same relative paths.
+
+Only ``src/`` and ``public/`` are website inputs. ``dist/`` is disposable
+generated output and must never be edited by hand.
 """
 import hashlib
 import shutil
@@ -17,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 SRC = ROOT / "src"
-OUT = ROOT / "Reliat Storyboard.dc.html"
+PUBLIC = ROOT / "public"
 DIST = ROOT / "dist"
 MANIFEST = SRC / "MANIFEST.txt"
 
@@ -32,21 +31,21 @@ def main() -> int:
             return 1
         chunks.append(path.read_bytes())
 
-    assembled = b"".join(chunks)
-    OUT.write_bytes(assembled)
+    if not PUBLIC.is_dir():
+        print("build.py: missing public directory", file=sys.stderr)
+        return 1
 
-    # Emit a conventional static-site bundle as well. The same assembled bytes
-    # become index.html, so deployment cannot drift from the reviewed prototype.
-    DIST.mkdir(exist_ok=True)
+    assembled = b"".join(chunks)
+
+    # Recreate the output so removed or renamed source assets cannot linger in
+    # a deployment. Copying public/ preserves the URLs referenced by the page.
+    if DIST.exists():
+        shutil.rmtree(DIST)
+    shutil.copytree(PUBLIC, DIST)
     (DIST / "index.html").write_bytes(assembled)
-    shutil.copy2(ROOT / "support.js", DIST / "support.js")
-    shutil.copytree(ROOT / "assets", DIST / "assets", dirs_exist_ok=True)
 
     digest = hashlib.sha256(assembled).hexdigest()
-    print(
-        f"built {OUT.name} and dist/index.html from {len(names)} parts "
-        f"— sha256 {digest}"
-    )
+    print(f"built dist/ from {len(names)} parts — index sha256 {digest}")
     return 0
 
 
