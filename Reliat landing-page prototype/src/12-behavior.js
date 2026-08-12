@@ -218,7 +218,7 @@ class Component extends DCLogic {
       this.hyps.forEach(h => { h.style.gridTemplateColumns = '42px minmax(0,1fr)'; });
       this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = '1fr'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1fr';
-      this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
+      if (this.artifactMetrics) this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
       this.finalScene.style.flexDirection = 'column';
       this.finalScene.style.gap = '72px';
       this.qa('[data-scene]').forEach((s, i) => {
@@ -285,7 +285,7 @@ class Component extends DCLogic {
       this.hyps.forEach(h => { h.style.gridTemplateColumns = '74px minmax(255px,.9fr) minmax(500px,1.65fr) 92px'; });
       this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))'; });
       if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1.75fr .75fr';
-      this.artifactMetrics.style.gridTemplateColumns = 'repeat(4,1fr)';
+      if (this.artifactMetrics) this.artifactMetrics.style.gridTemplateColumns = 'repeat(4,1fr)';
       this.finalScene.style.flexDirection = '';
       this.finalScene.style.gap = '';
       this.qa('[data-scene]').forEach(s => {

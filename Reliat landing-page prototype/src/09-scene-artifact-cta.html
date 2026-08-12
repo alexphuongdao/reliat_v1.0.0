@@ -1,33 +1,10 @@
         <!-- SCENE 6 · ARTIFACT + CTA -->
         <section data-scene="6" data-screen-label="Incident artifact & CTA" style="flex:0 0 100vw;height:100vh;position:relative;display:flex;align-items:center;justify-content:center;padding:0 6vw">
-          <div data-copy="artifact" style="width:100%;max-width:960px">
+          <div data-copy="artifact" style="width:100%;max-width:1320px">
             <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.24em;color:#218157;margin-bottom:16px;text-align:center">THE INCIDENT ARTIFACT</div>
-            <div style="background:#fffdf4;border:1px solid rgba(31,65,187,.18);border-radius:20px;padding:32px 34px;box-shadow:0 30px 70px -40px rgba(16,23,40,.28)">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;border-bottom:1px solid rgba(31,65,187,.12);padding-bottom:20px;margin-bottom:22px">
-                <div>
-                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="width:9px;height:9px;border-radius:50%;background:#218157"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:.03em">INC-26-0417</span></div>
-                  <div style="font-size:24px;font-weight:700;letter-spacing:-.01em">Oversize bypass — Primary Crush A</div>
-                </div>
-                <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#1F41BB;line-height:1.7">
-                  <div>14:23:06 → 14:24:51 · 105 s</div>
-                  <div>Root cause · <span style="color:#218157">Crusher CSS drift</span> · 0.72</div>
-                </div>
-              </div>
-              <div data-artifact-metrics style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-bottom:24px">
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#1F41BB;margin-bottom:6px">SEVERITY</div><div style="font-size:16px;font-weight:600;color:#218157">Elevated</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#1F41BB;margin-bottom:6px">P80 SHIFT</div><div style="font-size:16px;font-weight:600">42 → 96 mm</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#1F41BB;margin-bottom:6px">EXPOSED</div><div style="font-size:16px;font-weight:600">ML-01 + 2</div></div>
-                <div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#1F41BB;margin-bottom:6px">EVIDENCE</div><div style="font-size:16px;font-weight:600">5 linked</div></div>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:#fbf7e6;border:1px solid rgba(31,65,187,.12);border-radius:12px;padding:16px 18px">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.08em;color:#1F41BB">HUMAN REVIEW · awaiting engineer sign-off</div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap">
-                  <button type="button" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:#fffdf4;background:#218157;border:none;border-radius:8px;padding:9px 16px;cursor:pointer">Confirm cause</button>
-                  <button type="button" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#260E69;background:transparent;border:1px solid rgba(31,65,187,.24);border-radius:8px;padding:9px 16px;cursor:pointer">Request evidence</button>
-                  <button type="button" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#260E69;background:transparent;border:1px solid rgba(31,65,187,.24);border-radius:8px;padding:9px 16px;cursor:pointer">Reassign</button>
-                </div>
-              </div>
-            </div>
+            <figure data-artifact-frame>
+              <img data-artifact-image src="./assets/images/auditable-incident-artifact.png" alt="Reliat incident record showing detector evidence, raw telemetry, workflow actions, and downstream impact context">
+            </figure>
           </div>
 
           <div data-copy="cta" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(255,248,231,.94);padding:0 8vw">
