@@ -75,6 +75,54 @@ tenants. What is *not* fixed, in the order it would bite:
 6. **CEMEX data is 98 days old.** The app now says so honestly, which is better
    than lying, but a fresh export before the demo would be better still.
 
+## What I need from you
+
+Things I cannot determine from the repo, roughly in the order they block work.
+
+**Decisions only you can make**
+
+- **Is the 98-day-old CEMEX export the demo dataset, or is a fresher one
+  coming?** The app is honest about the age now, but a live-looking demo wants
+  recent data. If a new export is coming, say what shape — the same MINITAB
+  format re-ingests cleanly, anything else needs the mapping profile work in
+  `docs/DataArchitecture.md` §2 first.
+- **Shift schedule.** The Pulse KPI says "shift hours not configured" because
+  nobody has told us when CEMEX's shifts start and end. Two or three shifts?
+  What local timezone? This is a per-tenant harness field once you know.
+- **Does CEMEX have real equipment names?** The fabricated "grizzly screen panel
+  C-3" is gone, but the agent will do better if the harness carries the actual
+  asset list for CV42's line — screens, crushers, feeders. That is a
+  ten-line addition to `harness.py` and it makes every diagnosis more specific.
+- **What is the second tenant's data?** You mentioned a contract and an upcoming
+  meeting. The harness abstraction is ready; what it needs is their instrument,
+  their metrics, their units, and their failure vocabulary.
+
+**Worth researching before the demo**
+
+- **Ask CEMEX what they currently do when PSD drifts.** Who gets told, how long
+  until someone acts, what it costs when they don't. That is the number the
+  whole product is measured against and we do not have it.
+- **Whether any past events have known outcomes.** Even twenty labelled events
+  ("this alert was real / this was noise") would let us state a precision
+  figure instead of describing capability.
+
+**Things you might not know are true**
+
+- **The repo is public and the demo passwords are in git history** by your
+  earlier decision. `cemex/Cemex-Reliat-2026!`, `admin/…`, `test/…`, plus
+  `RELIAT_SESSION_SECRET` and `POSTGRES_PASSWORD` defaults. Rotate before
+  anything real; the `${VAR:-default}` fallbacks in `docker-compose.yml` should
+  fail closed rather than silently using the published value.
+- **`/docs`, `/redoc` and `/openapi.json` are unauthenticated** and publish the
+  whole API surface. Gate with `FastAPI(docs_url=None, openapi_url=None)` in
+  production.
+- **There is still no CI.** Nothing runs the 31 tests on push. The tenant-leak
+  test only protects you if it actually runs.
+- **`docker compose down -v` destroys the 21,138 real rows.** The volume is the
+  only copy. There is no backup.
+- **Agent runs cost real money per click.** ~$0.006–0.010 on Haiku, ~$0.031 on
+  Sonnet. One outlier had accumulated eight runs (~$0.14) before v1.0.6.
+
 ## Note for whoever verifies UI next
 
 `form_input` does **not** drive React controlled inputs in this app — it sets
