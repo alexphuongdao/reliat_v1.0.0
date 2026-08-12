@@ -67,7 +67,11 @@ class Canvas:
         return eid
 
     def rect(self, x, y, w, h, label="", pal=PRIMARY, *, size=14, dashed=False,
-             text_color=None, roughness=1, sw=2, bg=None, eid=None) -> str:
+             text_color=None, roughness=1, sw=2, bg=None, eid=None,
+             align="center", pad=16) -> str:
+        """`align="left"` for anything whose indentation carries meaning —
+        code, file trees, field lists. Centring those destroys the column
+        structure that makes them readable."""
         eid = eid or self._id("r")
         fill, stroke = pal
         e = self._base(eid, "rectangle", x, y, w, h, stroke,
@@ -78,11 +82,12 @@ class Canvas:
         if label:
             tid = self._id("t")
             tw, th = dims(label, size)
-            te = self._base(tid, "text", x + (w - tw) / 2, y + (h - th) / 2,
+            tx = x + pad if align == "left" else x + (w - tw) / 2
+            te = self._base(tid, "text", tx, y + (h - th) / 2,
                             tw, th, text_color or T_ON, "transparent", sw=1, roughness=0)
             te.update({
                 "text": label, "originalText": label, "fontSize": size,
-                "fontFamily": 3, "textAlign": "center", "verticalAlign": "middle",
+                "fontFamily": 3, "textAlign": align, "verticalAlign": "middle",
                 "containerId": eid, "lineHeight": 1.25, "autoResize": True,
             })
             self.els.append(te)
