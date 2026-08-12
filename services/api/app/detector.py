@@ -16,23 +16,40 @@ from .models import Channel, Measurement, Outlier
 WINDOW = 60  # samples
 MIN_WARMUP = 12
 
-EXPLANATIONS = {
-    "Particle-size spike": "F80 jumped {dev:.1f}σ above the rolling baseline over ~3min. Pattern matches a feed pulse from the upstream stockpile reclaim — not the crusher.",
-    "Topsize excursion": "Topsize crossed the alarm band and held above for {dur}. Consistent with oversized fragments bypassing the grizzly screen.",
-    "Fines collapse": "F10 dropped sharply with no corresponding F80 change. Suggests dust suppression water surge rather than a real fines reduction.",
-    "Color shift": "Average belt hue shifted from earth-brown into a redder band for {dur}. Likely material transition — high-iron ore on belt.",
-    "Sieve drift": "12.5mm passing % drifted out of band gradually over the last hour. No discrete event; trend is the signal.",
-    "Sensor flutter": "High-frequency oscillation on Topsize with no PSD change. Likely camera vibration during conveyor restart, not material.",
-}
+# There is deliberately no table of explanations or suggested actions here.
+#
+# There used to be. Six format strings that asserted a physical root cause the
+# detector had not inferred and could not infer — "consistent with oversized
+# fragments bypassing the grizzly screen", "likely material transition — high-
+# iron ore on belt" — plus six suggested actions, one of which named a piece of
+# equipment that does not exist ("grizzly screen panel C-3"). They rendered in
+# the UI under a heading that said "AI explanation", for all 1,513 CEMEX
+# outliers, without a model ever having run.
+#
+# A z-score knows one thing: this value is N sigma from its rolling baseline.
+# It does not know why. Root cause is the Diagnostic Agent's job, it is
+# per-tenant, it is cited, and it costs about a cent. Until it runs, the honest
+# output is the measurement itself.
+#
+# `summary` below is therefore a statement of what was measured. `action` is
+# empty until an agent fills it.
 
-SUGGESTED = {
-    "Particle-size spike": "Cross-check stockpile reclaim feeder rate at the same window.",
-    "Topsize excursion": "Inspect grizzly screen panel C-3 for damage at next downtime.",
-    "Fines collapse": "Confirm dust suppression nozzle sequence — likely a programming artifact.",
-    "Color shift": "Notify downstream of high-iron pulse — expect SAG draw +6%.",
-    "Sieve drift": "No immediate action. Re-evaluate at end of shift.",
-    "Sensor flutter": "Mark as instrumentation; suppress for next 15 min.",
-}
+
+def _summarize(
+    metric: str, unit: str, value: float, baseline: float, dev: float, window_n: int
+) -> str:
+    """A factual description of the deviation. No causal claim."""
+    direction = "above" if dev >= 0 else "below"
+    if baseline:
+        pct = (value - baseline) / abs(baseline) * 100.0
+        delta = f" ({pct:+.0f}%)"
+    else:
+        delta = ""
+    return (
+        f"{metric} {value:.2f}{unit} against a rolling baseline of "
+        f"{baseline:.2f}{unit} over the previous {window_n} samples — "
+        f"{abs(dev):.1f}σ {direction}{delta}."
+    )
 
 
 def detect_outliers(channel: Channel, samples: list[Measurement]) -> Iterable[Outlier]:
@@ -59,14 +76,17 @@ def detect_outliers(channel: Channel, samples: list[Measurement]) -> Iterable[Ou
             continue
         counter += 1
         out_id = f"OUT-{uuid.uuid4().hex[:12].upper()}"
-        dur = f"{2 + (counter % 6)}m {(10 + counter * 7) % 60:02d}s"
+        # `confidence` is a rescaling of the deviation, not a probability. It is
+        # monotonic in the evidence, which is all the triage sort needs. The UI
+        # must not present it as a statistical confidence.
         confidence = min(0.98, 0.55 + min(absdev, 6.0) / 12.0)
+        unit = "mm" if metric != "Hue avg" else "°"
         yield Outlier(
             id=out_id,
             channel_id=channel.id,
             t=m.t,
             metric=metric,
-            unit="mm" if metric != "Hue avg" else "°",
+            unit=unit,
             value=value,
             baseline=mean,
             deviation=absdev,
@@ -75,8 +95,10 @@ def detect_outliers(channel: Channel, samples: list[Measurement]) -> Iterable[Ou
             confidence=confidence,
             status="open",
             assignee=None,
-            summary=EXPLANATIONS[type_].format(dev=absdev, dur=dur),
-            action=SUGGESTED[type_],
+            summary=_summarize(metric, unit, value, mean, dev, len(window)),
+            # Empty until the Diagnostic Agent runs. The detector has no basis
+            # for recommending an action.
+            action="",
             measurement_id=m.id,
         )
 

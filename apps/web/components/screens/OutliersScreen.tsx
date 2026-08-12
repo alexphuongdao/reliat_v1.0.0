@@ -572,7 +572,13 @@ function OutlierInboxRow({
           }}
         >
           <div>
-            <SectionLabel icon="sparkle">AI explanation</SectionLabel>
+            {/* The heading has to follow the content. Before a diagnosis runs
+                this panel holds the detector's arithmetic, not a model's
+                reasoning — labelling that "AI explanation" claimed an
+                inference nothing had made. */}
+            <SectionLabel icon={diagnosis ? "sparkle" : "zap"}>
+              {diagnosis ? "Agent diagnosis" : "What the detector measured"}
+            </SectionLabel>
             {diagnosis ? (
               <div style={{ margin: "0 0 14px" }}>
                 <p style={{ fontSize: 13, color: "var(--text-1)", lineHeight: 1.6, margin: "0 0 10px" }}>
@@ -690,17 +696,31 @@ function OutlierInboxRow({
               <Button size="sm" variant="ghost" leftIcon="message" onClick={onAsk}>Ask agent</Button>
               <Button size="sm" variant="ghost" leftIcon="belt" onClick={onOpenChannel}>Open channel</Button>
             </div>
-            <div
-              style={{
-                marginTop: 12, padding: 10,
-                background: "var(--accent-dim)", borderLeft: "2px solid var(--accent)",
-                borderRadius: "var(--r-sm)",
-                fontSize: 12.5, color: "var(--text-2)",
-              }}
-            >
-              <span style={{ color: "var(--accent-bright)", fontWeight: 600 }}>Agent suggests:</span>{" "}
-              {diagnosis ? diagnosis.recommendedAction : o.action}
-            </div>
+            {/* Only an agent gets to suggest an action. This used to fall back
+                to `o.action`, a detector template that named equipment which
+                does not exist ("grizzly screen panel C-3") under the same
+                "Agent suggests" label. */}
+            {diagnosis?.recommendedAction ? (
+              <div
+                style={{
+                  marginTop: 12, padding: 10,
+                  background: "var(--accent-dim)", borderLeft: "2px solid var(--accent)",
+                  borderRadius: "var(--r-sm)",
+                  fontSize: 12.5, color: "var(--text-2)",
+                }}
+              >
+                <span style={{ color: "var(--accent-bright)", fontWeight: 600 }}>Agent suggests:</span>{" "}
+                {diagnosis.recommendedAction}
+              </div>
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                <Unavailable
+                  compact
+                  label="No recommended action yet."
+                  reason="Run the Diagnostic Agent to get a cited root cause and a suggested action for this event."
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

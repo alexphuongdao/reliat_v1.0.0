@@ -9,8 +9,92 @@ traceable; this file is updated per commit.
 | `v1.0.1` | Baseline: per-tenant harness, honest empty states, architecture docs | 27 pass / 3 xfail |
 | `v1.0.2` | Cross-tenant leak test over every route | 31 pass / 3 xfail |
 | `v1.0.3` | `/channels` no longer crashes for tenants without `cv42` | 31 pass / 3 xfail |
+| `v1.0.4` | Detector stops asserting root causes it never inferred | 31 pass / 3 xfail |
 
 ---
+
+## v1.0.4 — the detector stops claiming to be the agent
+
+### What was wrong
+
+`detector.py` held six templated explanations and six suggested actions. They
+asserted physical root causes nothing had inferred, and rendered under a heading
+that said **"AI explanation"** with a teal **"Agent suggests:"** callout — for
+every outlier, without a model ever running.
+
+Three separate falsehoods, in increasing order of seriousness:
+
+1. **Invented causes.** "Consistent with oversized fragments bypassing the
+   grizzly screen." "Likely material transition — high-iron ore on belt."
+2. **Invented equipment.** `"Inspect grizzly screen panel C-3 for damage at next
+   downtime."` Panel C-3 does not exist. A plant engineer can walk out and check.
+3. **An invented measurement.** The duration in "held above for 3m 41s" came
+   from the loop counter:
+
+   ```python
+   dur = f"{2 + (counter % 6)}m {(10 + counter * 7) % 60:02d}s"
+   ```
+
+   Not derived from the data at all. That is why the durations cycled.
+
+The backfill dry run then surfaced a fourth: the templates asserted a
+**direction contradicted by the stored numbers**. One row read "F80 jumped 13.7σ
+*above* the rolling baseline" while holding `value 44.15, baseline 66.42` — it
+was below.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `services/api/app/detector.py` | `EXPLANATIONS` and `SUGGESTED` deleted, with a comment recording why. New `_summarize()` states the measurement only. `action=""`. Fabricated `dur` removed. |
+| `services/api/app/backfill_summaries.py` | New. Rewrites already-stored summaries from the numbers beside them. Dry run by default. |
+| `apps/web/components/screens/OutliersScreen.tsx` | Heading follows content: "Agent diagnosis" with a diagnosis, "What the detector measured" without. "Agent suggests" only renders when an agent actually suggested something; otherwise an `Unavailable` pointing at the button. |
+| `apps/web/components/screens/ChannelsScreen.tsx` | Outlier-history column header "AI summary" → "Detection". |
+
+New summary format:
+
+```
+F80 32.21mm against a rolling baseline of 38.60mm over the previous 60 samples — 6.7σ below (-17%).
+```
+
+### Decisions worth remembering
+
+**A z-score knows one thing: this value is N sigma from its baseline.** It does
+not know why. Root cause is the agent's job — per-tenant, cited, ~$0.01. The
+honest output before it runs is the measurement itself. That is the same
+principle as the `Unavailable` panels, applied to a surface that was *filling*
+the gap rather than admitting it, which is strictly worse than leaving it empty.
+
+**Backfill rather than re-detect.** Re-running detection would mint new ids and
+discard triage state and diagnosis links. The rewrite derives each summary from
+the row's own `metric/value/baseline/deviation`, so nothing but the prose moves.
+The sign of the deviation is recovered from `value` vs `baseline`, since
+`deviation` is stored absolute.
+
+**`confidence` is left alone but documented.** It is `0.55 + min(σ,6)/12` — a
+rescaling of the deviation, not a probability. Monotonic in the evidence, which
+is all the triage sort needs. A comment now says so; the UI still shows it as a
+percentage, which is still misleading. Logged below.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| Backfill dry run | 1,558 outliers, **1,558** carrying a fabricated cause and an action |
+| After `--apply` | `still_fabricated: 0` of 1,558 |
+| Stored sample | `Topsize 191.17mm against a rolling baseline of 90.14mm … 7.4σ above (+112%)` |
+| Demo tenant, expanded row, in-browser | Heading reads **"What the detector measured"**; text matches RAW ROW exactly (`value 32.2093`, `baseline 38.5988`, `deviation 6.656σ`) |
+| Action block with no diagnosis | "No recommended action yet. Run the Diagnostic Agent…" |
+| `tsc --noEmit` | clean |
+| Backend suite | 31 passed, 3 xfailed |
+
+### Still open
+
+- **`confidence` still renders as `98%`** in the outliers table under a column
+  headed `CONF.`. It is a rescaled sigma. Either relabel it or show sigma.
+- The Library and Agent screens still read from `lib/mockData.ts`.
+- Nothing prevents a future template from reintroducing this. A test asserting
+  that `outliers.summary` contains no causal language would be cheap.
 
 ## v1.0.3 — `/channels` crash
 

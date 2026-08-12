@@ -390,7 +390,9 @@ export function ChannelsScreen({
             <span></span>
             <span>Time</span>
             <span>Type</span>
-            <span>AI summary</span>
+            {/* This column shows `outlier.summary` — the detector's arithmetic.
+                It was headed "AI summary", which claimed a model had written it. */}
+            <span>Detection</span>
             <span>Severity</span>
             <span>Status</span>
             <span style={{ textAlign: "right" }}>Suggested</span>
