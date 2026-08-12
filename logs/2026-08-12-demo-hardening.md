@@ -8,8 +8,82 @@ traceable; this file is updated per commit.
 |---|---|---|
 | `v1.0.1` | Baseline: per-tenant harness, honest empty states, architecture docs | 27 pass / 3 xfail |
 | `v1.0.2` | Cross-tenant leak test over every route | 31 pass / 3 xfail |
+| `v1.0.3` | `/channels` no longer crashes for tenants without `cv42` | 31 pass / 3 xfail |
 
 ---
+
+## v1.0.3 — `/channels` crash
+
+### Symptom
+
+Hard error page ("This page couldn't load") on `/channels` for the demo tenant.
+CEMEX was fine — but only because its one channel happens to be called `cv42`.
+
+### Cause
+
+A CEMEX channel id had been hardcoded as the global default in a component
+every tenant shares:
+
+```ts
+// app/(app)/channels/page.tsx:14
+const initialChannelId = params.get("c") || "cv42";
+```
+
+The fallback at `ChannelsScreen.tsx:67` *looks* like it handles a miss, which is
+why this survived review:
+
+```ts
+const channel = CHANNELS.find((c) => c.id === channelId) ?? CHANNELS[0];  // ✅ resolves
+const series  = SERIES[channelId] || [];      // ❌ still the *requested* id → []
+...
+{fmtTime(visible[0].t)}                       // ❌ TypeError on []
+```
+
+It rescues the channel *object* and then the very next line looks the series up
+by the unresolved id. Empty series, then a dereference of `visible[0]`.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `apps/web/app/(app)/channels/page.tsx` | No default channel. `params.get("c") ?? undefined` — the screen picks the tenant's first channel. |
+| `apps/web/components/screens/ChannelsScreen.tsx` | Split *requested* id from *resolved* id. Everything downstream uses `channel.id`. |
+| ↳ | Empty channel list renders `Unavailable` instead of bare text. |
+| ↳ | `compareIds` overlay drops a missing channel instead of `!`-asserting it. |
+| ↳ | Colour-strip header shows "no readings in range" instead of dereferencing `visible[0]`. |
+
+### Decisions worth remembering
+
+**Resolve once, then use only the resolved value.** The bug was not the missing
+fallback — the fallback existed. It was keeping two ids in scope where one was
+already known to be unresolvable. Introducing `const channelId = channel.id`
+below the guard makes the unresolved id unreachable by construction, so the same
+mistake cannot be made again in a line added later.
+
+**The non-null assertion on overlays was the same bug waiting to happen.**
+`CHANNELS.find(...)!` would throw the moment a compare selection outlived a
+tenant switch. Changed to `flatMap` + drop.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| CEMEX `/channels?c=cv99-does-not-exist` (the exact crash branch) | Renders, falls back to CV42 Tunnel |
+| Demo tenant `/channels` in-browser | **Renders CV03 Pebble** — full series, PSD snapshot, colour strip |
+| CEMEX `/channels` still correct | CV42 Tunnel, 1,513 outlier history |
+| `tsc --noEmit` | clean |
+| Backend suite | 31 passed, 3 xfailed |
+
+### Bug found during verification
+
+**`form_input` does not drive React controlled inputs.** It sets the DOM value
+without firing the events React listens for, so the login Server Action received
+empty fields and silently did nothing — no `POST /api/auth/login` ever reached
+the API. Clicking the field *by ref* and using `type` works. Worth remembering
+for any future UI verification in this repo.
+
+**A failed sign-in shows no error.** The form cleared and stayed on the page
+with no message. Not fixed here — logged under Still open.
 
 ## v1.0.2 — cross-tenant leak test
 

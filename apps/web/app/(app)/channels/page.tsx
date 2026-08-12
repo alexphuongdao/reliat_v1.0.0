@@ -11,7 +11,11 @@ import { ScreenError, ScreenLoading } from "@/components/ui";
 // useSearchParams must be inside a Suspense boundary in Next 16.
 function ChannelsPageInner() {
   const params = useSearchParams();
-  const initialChannelId = params.get("c") || "cv42";
+  // No default. `cv42` used to live here — CEMEX's only channel, hardcoded
+  // into a component every tenant shares, which crashed the page for anyone
+  // who did not happen to own a channel by that name. The screen picks the
+  // tenant's first channel when nothing is requested.
+  const initialChannelId = params.get("c") ?? undefined;
   const { openOutlier, askAgent } = useAppShell();
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [error, setError] = useState<string | null>(null);

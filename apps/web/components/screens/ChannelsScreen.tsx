@@ -11,7 +11,7 @@
  * `psdAt` callback the parent provides (same contract as the original).
  */
 import { useEffect, useState } from "react";
-import { Button, Icon, Pill, Segmented, SevGlyph, StatusPill } from "../ui";
+import { Button, Icon, Pill, Segmented, SevGlyph, StatusPill, Unavailable } from "../ui";
 import { ColorStrip, DistributionChart, TimeSeries } from "../charts";
 import type { DistributionSnapshot, TimeSeriesSeries } from "../charts";
 import { fmtAge, fmtTime } from "../../lib/format";
@@ -52,7 +52,10 @@ export function ChannelsScreen({
   onOpenOutlier,
   onAskAgent,
 }: ChannelsScreenProps) {
-  const [channelId, setChannelId] = useState(initialChannelId || "cv42");
+  // What the URL or the switcher *asked* for. It may name a channel this
+  // tenant does not have — a bookmarked link, or a shared URL from another
+  // site. Resolution to a real channel happens below, once.
+  const [requestedId, setRequestedId] = useState(initialChannelId ?? "");
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [metric, setMetric] = useState("Topsize");
   const [range, setRange] = useState<RangeId>("24h");
@@ -61,13 +64,25 @@ export function ChannelsScreen({
   const [psdMode, setPsdMode] = useState<PsdMode>("percentile");
 
   useEffect(() => {
-    if (initialChannelId) setChannelId(initialChannelId);
+    if (initialChannelId) setRequestedId(initialChannelId);
   }, [initialChannelId]);
 
-  const channel = CHANNELS.find((c) => c.id === channelId) ?? CHANNELS[0];
+  const channel = CHANNELS.find((c) => c.id === requestedId) ?? CHANNELS[0];
   if (!channel) {
-    return <div style={{ padding: 24, color: "var(--text-2)" }}>No channels available.</div>;
+    return (
+      <div style={{ padding: 24 }}>
+        <Unavailable
+          label="No channels for this tenant."
+          reason="Nothing has been ingested yet, or every channel is assigned to another tenant."
+        />
+      </div>
+    );
   }
+  // Everything below uses the *resolved* id. Reading the requested id here is
+  // what crashed the page for every tenant without a channel called `cv42`:
+  // `channel` fell back correctly, the series lookup did not, and an empty
+  // series was then dereferenced at `visible[0]`.
+  const channelId = channel.id;
   const series = SERIES[channelId] || [];
   const windowSize = RANGE_WINDOW[range];
   const visible = series.slice(-windowSize);
@@ -77,9 +92,12 @@ export function ChannelsScreen({
     color: channel.color,
     points: visible,
   };
-  const overlays: TimeSeriesSeries[] = compareIds.map((id) => {
-    const cc = CHANNELS.find((x) => x.id === id)!;
-    return { name: cc.name, color: cc.color, points: (SERIES[id] || []).slice(-windowSize) };
+  // `compareIds` can outlive the channel list it was built from (tenant switch,
+  // stale URL), so a miss here has to drop the overlay rather than assert.
+  const overlays: TimeSeriesSeries[] = compareIds.flatMap((id) => {
+    const cc = CHANNELS.find((x) => x.id === id);
+    if (!cc) return [];
+    return [{ name: cc.name, color: cc.color, points: (SERIES[id] || []).slice(-windowSize) }];
   });
   const allSeries: TimeSeriesSeries[] = [primarySeries, ...overlays];
 
@@ -109,7 +127,7 @@ export function ChannelsScreen({
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: "-0.01em" }}>
             {channel.name}
           </h1>
-          <ChannelSwitcher channels={CHANNELS} current={channelId} onSelect={setChannelId} />
+          <ChannelSwitcher channels={CHANNELS} current={channelId} onSelect={setRequestedId} />
           <Pill mono size="sm">{channel.belt}</Pill>
           {channel.online
             ? <Pill color="var(--ch-4)" bg="rgba(118,217,182,0.10)" border="rgba(118,217,182,0.16)" size="sm">● online</Pill>
@@ -290,7 +308,9 @@ export function ChannelsScreen({
               </span>
             </div>
             <span className="muted" style={{ fontSize: 11 }}>
-              {fmtTime(visible[0].t)} → {fmtTime(visible[visible.length - 1].t)}
+              {visible.length > 0
+                ? `${fmtTime(visible[0].t)} → ${fmtTime(visible[visible.length - 1].t)}`
+                : "no readings in range"}
             </span>
           </header>
           <div style={{ padding: 12 }}>
