@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -278,3 +281,82 @@ class OutlierDiagnosis(Base):
     error: Mapped[str | None] = mapped_column(String(2048), nullable=True)
 
     outlier: Mapped[Outlier] = relationship(back_populates="diagnoses")
+
+
+# ─── agent conversations ────────────────────────────────────────────────
+
+class AgentThread(Base):
+    """A durable conversation. The unit the Agent screen lists and opens.
+
+    Threads carry `tenant_id` directly rather than reaching it through a
+    channel, because a thread does not have to be about a channel — an
+    operator can ask a question scoped to nothing. That makes this the first
+    table where the tenant boundary is its own column, so every query against
+    it must filter on it explicitly (see `test_cross_tenant_leak`).
+
+    `kind` distinguishes how the thread started:
+      diagnosis — opened by "Run Diagnostic Agent" on an outlier
+      ask       — opened by a person asking a question
+    """
+
+    __tablename__ = "agent_threads"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="ask")
+    title: Mapped[str] = mapped_column(String(256), nullable=False, default="")
+
+    # What the thread is about. Both optional: a general question has neither.
+    channel_id: Mapped[str | None] = mapped_column(
+        ForeignKey("channels.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    outlier_id: Mapped[str | None] = mapped_column(
+        ForeignKey("outliers.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    created_by: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Sort key for the thread list. Bumped on every message.
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+
+    messages: Mapped[list["AgentMessage"]] = relationship(
+        back_populates="thread", cascade="all, delete-orphan",
+        order_by="AgentMessage.created_at",
+    )
+
+
+class AgentMessage(Base):
+    """One turn in a thread.
+
+    An assistant turn that produced a diagnosis points at the existing
+    `outlier_diagnoses` row via `diagnosis_id` rather than copying its fields.
+    The diagnosis stays the single source of truth for the artifact; this table
+    only records that it was said, when, and in which conversation. Duplicating
+    root_cause/hypotheses here would let the two drift.
+    """
+
+    __tablename__ = "agent_messages"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    thread_id: Mapped[str] = mapped_column(
+        ForeignKey("agent_threads.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)  # user|assistant|system
+    content: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+
+    # Set when this turn *is* an auditable artifact.
+    diagnosis_id: Mapped[str | None] = mapped_column(
+        ForeignKey("outlier_diagnoses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+
+    thread: Mapped[AgentThread] = relationship(back_populates="messages")

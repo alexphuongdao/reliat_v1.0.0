@@ -33,6 +33,8 @@ from app.auth import ROLE_OWNER, SESSION_COOKIE, create_session
 from app.db import get_session
 from app.main import app
 from app.models import (
+    AgentMessage,
+    AgentThread,
     Base,
     Channel,
     Measurement,
@@ -78,6 +80,7 @@ PARAM_VALUES: dict[str, tuple[str, str]] = {
     "channel_id": ("chan-alpha", "chan-bravo"),
     "outlier_id": ("OUT-ALPHA-0001", "OUT-BRAVO-SECRET"),
     "tenant_id": ("tenant-alpha", "tenant-bravo"),
+    "thread_id": ("TH-ALPHA-0001", "TH-BRAVO-SECRET"),
 }
 
 #: A tenant id that certainly does not exist, for the oracle check.
@@ -104,6 +107,9 @@ BRAVO_MARKERS: tuple[str, ...] = (
     "bravo-confidential-summary",
     "bravo-confidential-root-cause",
     "tenant-bravo",
+    "TH-BRAVO-SECRET",
+    "bravo-confidential-thread",
+    "bravo-confidential-message",
 )
 
 
@@ -183,6 +189,25 @@ class CrossTenantLeakTests(unittest.TestCase):
             confidence=0.8, recommended_action="bravo action",
             evidence_summary="bravo evidence", input_tokens=10, output_tokens=10,
         ))
+
+        # Agent threads carry `tenant_id` as their own column rather than
+        # reaching it through a channel, so there is no join to lean on here —
+        # a forgotten filter returns every customer's transcripts.
+        for tid, tenant, chan, outlier, marker in (
+            ("TH-ALPHA-0001", "tenant-alpha", "chan-alpha", "OUT-ALPHA-0001", "alpha thread"),
+            ("TH-BRAVO-SECRET", "tenant-bravo", "chan-bravo", "OUT-BRAVO-SECRET",
+             "bravo-confidential-thread"),
+        ):
+            s.add(AgentThread(
+                id=tid, tenant_id=tenant, kind="diagnosis", title=marker,
+                channel_id=chan, outlier_id=outlier, created_by=None,
+                created_at=now, updated_at=now,
+            ))
+            s.add(AgentMessage(
+                id=f"MSG-{tid}", thread_id=tid, role="assistant",
+                content=marker.replace("thread", "message"), created_at=now,
+                diagnosis_id="DIAG-BRAVO-0001" if tenant == "tenant-bravo" else None,
+            ))
 
         cls.token = create_session(s, alpha_user)
         s.commit()

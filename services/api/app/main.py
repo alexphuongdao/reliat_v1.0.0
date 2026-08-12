@@ -10,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .bootstrap import bootstrap_identity
 from .config import settings
 from .db import init_db, session_scope
+from .routes.agent import router as agent_router
 from .routes.auth import router as auth_router
 from .routes.channels import router as channels_router
 from .routes.harness import router as harness_router
@@ -70,6 +71,7 @@ app.include_router(channels_router)
 app.include_router(outliers_router)
 app.include_router(usage_router)
 app.include_router(harness_router)
+app.include_router(agent_router)
 
 
 @app.get("/api/health")

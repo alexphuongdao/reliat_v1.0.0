@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..agent_threads import record_diagnosis_run
 from ..auth import Principal, get_principal
 from ..db import get_session
 from ..diagnostic_agent import DiagnosticAgentError, run_diagnosis
@@ -160,12 +161,30 @@ def diagnose_outlier(
     """Run the Diagnostic Agent on one outlier and persist the result."""
     # Ownership check before the model call — this endpoint spends real
     # Anthropic credits, so an unauthorised id must not get that far.
-    _owned_outlier(session, outlier_id, principal)
+    outlier = _owned_outlier(session, outlier_id, principal)
     try:
         diagnosis = run_diagnosis(session, outlier_id)
     except DiagnosticAgentError as exc:
         raise HTTPException(404, str(exc)) from exc
     session.add(diagnosis)
+    session.flush()
+
+    # Also record the run as conversation. The response shape is unchanged —
+    # the Outliers screen keeps working exactly as before — but the run now
+    # survives as something the Agent screen can list and reopen instead of
+    # being reachable only from the one outlier it belonged to.
+    channel = session.query(Channel).filter(Channel.id == outlier.channel_id).first()
+    tenant_id = principal.tenant_id or (channel.tenant_id if channel else None)
+    if tenant_id is not None:
+        record_diagnosis_run(
+            session,
+            tenant_id=tenant_id,
+            outlier=outlier,
+            channel=channel,
+            diagnosis=diagnosis,
+            user_id=principal.user.id,
+        )
+
     session.commit()
     session.refresh(diagnosis)
     return _diagnosis_out(diagnosis)
