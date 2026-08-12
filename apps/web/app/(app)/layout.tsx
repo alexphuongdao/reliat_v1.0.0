@@ -1,31 +1,23 @@
 import { AppShell } from "@/components/shell/AppShell";
-import { buildMock } from "@/lib/mockData";
-import { STABLE_NOW } from "@/lib/now";
+import { STATIC_COMMANDS } from "@/lib/commands";
 import { requireUser } from "@/lib/session";
 
 // Layouts don't re-render on client-side navigation, so this check runs on
 // the initial server render of any authenticated route. The routes' own data
 // fetches are scoped by the API using the same cookie, so a stale client
 // can't read another tenant's rows even between these checks.
+//
+// This layout used to call `buildMock()` and hand the shell a fabricated
+// twelve-channel substrate, which every tenant saw identically. The shell
+// now loads the caller's own channels and outliers; the only thing passed
+// down is the static command list, which is UI, not data.
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await requireUser();
 
-  // Build the mock substrate the shell needs (channels + outliers feed the
-  // ⌘K command palette; agentThread + commands seed the drawer + palette).
-  // Each page builds its own mock for its screen — deterministic with the
-  // same STABLE_NOW, so the data matches across the shell and page.
-  const { channels, outliers, agentThread, commands } = buildMock(STABLE_NOW);
-
   return (
-    <AppShell
-      channels={channels}
-      outliers={outliers}
-      agentThread={agentThread}
-      commands={commands}
-      user={user}
-    >
+    <AppShell commands={STATIC_COMMANDS} user={user}>
       {children}
     </AppShell>
   );

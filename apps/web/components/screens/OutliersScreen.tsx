@@ -21,7 +21,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button, Icon, SevGlyph, Spinner, StatusPill } from "../ui";
+import { Button, Icon, SevGlyph, Spinner, StatusPill, Unavailable } from "../ui";
 import { api } from "../../lib/api";
 import { fmtAge, fmtNum, fmtTime } from "../../lib/format";
 import type { Channel, Diagnosis, Outlier, Severity } from "../../lib/types";
@@ -635,36 +635,24 @@ function OutlierInboxRow({
               </p>
             )}
 
+            {/* Both panels below rendered fabricated content for every
+                outlier — a fixed "+6% draw on CV28" string, and four
+                `[1,2,3,4].map()` rows with invented ids and match scores.
+                They are stated as unavailable until the features are real:
+                impact needs the Phase 2 agent, similarity needs the
+                `event_signatures` feature vectors. See
+                docs/PlatformArchitecture.md §4.2 and §7 slices 9-10. */}
             <SectionLabel icon="zap">Predicted downstream effect</SectionLabel>
-            <p
-              style={{
-                fontSize: 13, color: "var(--text-2)", lineHeight: 1.6,
-                margin: "0 0 14px", textWrap: "pretty" as CSSProperties["textWrap"],
-              }}
-            >
-              Next 18–24 min: <span style={{ color: "var(--text-1)" }}>+6% draw on CV28 SAG Feed</span>.
-              Currently absorbed (CV28 offline). Confirm at next belt restart.
-            </p>
+            <Unavailable
+              label="Unavailable"
+              reason="Impact prediction is not built yet. It needs the Phase 2 agent and a downtime prior for this failure mode — no estimate is shown rather than a guessed one."
+            />
 
             <SectionLabel icon="history">Similar past outliers</SectionLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 14 }}>
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-                    background: "var(--surface-2)", border: "1px solid var(--border)",
-                    borderRadius: "var(--r-sm)", fontSize: 11.5,
-                  }}
-                >
-                  <SevGlyph sev={i === 1 ? "critical" : "warn"} size={8} />
-                  <span className="mono">OUT-{(2300 - i * 7).toString(36).toUpperCase()}</span>
-                  <span className="muted" style={{ marginLeft: "auto" }}>
-                    {i * 3}d ago · 0.{91 - i * 4} match
-                  </span>
-                </div>
-              ))}
-            </div>
+            <Unavailable
+              label="Unavailable"
+              reason="Similarity search needs per-event feature vectors, which aren't computed yet. Nothing is retrieved rather than showing an approximate match."
+            />
           </div>
 
           <div>

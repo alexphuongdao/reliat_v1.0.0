@@ -14,6 +14,7 @@ import { Button, CommandPalette, Drawer, Icon, Tooltip } from "../ui";
 import { AgentScreen } from "../screens/AgentScreen";
 import { AppShellContext, type AgentScope } from "./context";
 import { AccountMenu } from "./AccountMenu";
+import { api } from "../../lib/api";
 import type { SessionUser } from "../../lib/session.types";
 import type {
   AgentTurnMsg,
@@ -38,18 +39,39 @@ const G_TO_SURFACE: Record<string, SurfaceId> = {
 
 export interface AppShellProps {
   children: ReactNode;
-  channels: Channel[];
-  outliers: Outlier[];
-  agentThread: AgentTurnMsg[];
   commands: Command[];
   user: SessionUser;
 }
 
-export function AppShell({
-  children, channels, outliers, agentThread, commands, user,
-}: AppShellProps) {
+export function AppShell({ children, commands, user }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname() || "/pulse";
+
+  // The palette and the agent drawer used to be fed a fabricated substrate
+  // built in the layout, so every tenant saw the same twelve channels
+  // regardless of what they actually own. They now load the caller's real,
+  // tenant-scoped data — and stay empty when there is none, which is the
+  // honest answer for a customer with one channel or none.
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [outliers, setOutliers] = useState<Outlier[]>([]);
+  const agentThread: AgentTurnMsg[] = useMemo(() => [], []);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([api.channels(), api.outliers({ limit: 500 })])
+      .then(([c, o]) => {
+        if (cancelled) return;
+        setChannels(c);
+        setOutliers(o);
+      })
+      // A failure here degrades the palette, not the page. The screens do
+      // their own loading and error reporting; the shell must not blank the
+      // app because a secondary fetch failed.
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ─── Surface from pathname ───
   const surface: SurfaceId = useMemo(() => {

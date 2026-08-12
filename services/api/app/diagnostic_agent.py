@@ -19,10 +19,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .config import settings
-from .models import Channel, Measurement, Outlier, OutlierDiagnosis
-
-WINDOW_BEFORE = 20
-WINDOW_AFTER = 5
+from .harness import TenantHarness, harness_for_tenant
+from .models import Channel, Measurement, Outlier, OutlierDiagnosis, Tenant
 
 # $/million tokens — approximate, for in-app cost tracking only. Not a
 # billing source of truth: verify real spend at
@@ -38,101 +36,49 @@ DEFAULT_PRICE_PER_MTOK = (3.00, 15.00)
 def _price_for(model: str) -> tuple[float, float]:
     return PRICE_PER_MTOK.get(model, DEFAULT_PRICE_PER_MTOK)
 
-SYSTEM_PROMPT = """You are the diagnostic assistant for a mining/cement plant's particle-size-distribution \
-monitoring system. You are given one detected outlier on a conveyor-belt PSD analyzer, plus the raw \
-measurement window around it. Your job is root-cause diagnosis, not downstream-impact prediction.
 
-Rules:
-- Cite specific numbers from the evidence given. Never invent a number that isn't in the data.
-- If the evidence is ambiguous, say so — list competing hypotheses with honest confidence, don't force one.
-- Distinguish material/process causes (feed composition, blockage, oversize) from instrumentation causes \
-(camera fault, lighting, belt vibration) — both are common in real PSD analyzer data.
-- Speak like an engineer writing a shift-handoff note: precise, short sentences, no filler.
-- Never recommend stopping the plant — this system only diagnoses, it does not make shutdown calls.
+def _window_for(session: Session, outlier: Outlier, harness: TenantHarness) -> list[Measurement]:
+    """The evidence window, sized by the tenant's context policy.
 
-You MUST respond by calling `submit_diagnosis` exactly once."""
-
-DIAGNOSIS_TOOL = {
-    "name": "submit_diagnosis",
-    "description": "Submit the root-cause diagnosis for this outlier.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "root_cause": {
-                "type": "string",
-                "description": "The single most likely root cause, 1-2 sentences, citing specific numbers.",
-            },
-            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-            "hypotheses": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 4,
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "cause": {"type": "string"},
-                        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-                        "supporting_evidence": {"type": "string"},
-                        "contradicting_evidence": {"type": "string"},
-                    },
-                    "required": ["cause", "confidence", "supporting_evidence"],
-                },
-            },
-            "recommended_action": {
-                "type": "string",
-                "description": "One concrete next check or action for the plant/maintenance team.",
-            },
-            "evidence_summary": {
-                "type": "string",
-                "description": "2-4 sentences summarizing the concrete numeric evidence used.",
-            },
-        },
-        "required": ["root_cause", "confidence", "hypotheses", "recommended_action", "evidence_summary"],
-    },
-}
-
-
-def _window_for(session: Session, outlier: Outlier) -> list[Measurement]:
+    CEMEX samples sub-minute, the demo plant once a minute — so "20 samples"
+    means ~4 minutes on one site and 20 minutes on the other. The window is a
+    harness decision, not a global constant.
+    """
     before = list(session.execute(
         select(Measurement)
         .where(Measurement.channel_id == outlier.channel_id, Measurement.t <= outlier.t)
         .order_by(Measurement.t.desc())
-        .limit(WINDOW_BEFORE)
+        .limit(harness.context.window_before)
     ).scalars())
     before.reverse()
     after = list(session.execute(
         select(Measurement)
         .where(Measurement.channel_id == outlier.channel_id, Measurement.t > outlier.t)
         .order_by(Measurement.t.asc())
-        .limit(WINDOW_AFTER)
+        .limit(harness.context.window_after)
     ).scalars())
     return before + after
 
 
-def _format_window(window: list[Measurement], outlier_t: datetime) -> str:
-    lines = ["t_offset_s, f80, topsize, sd_ratio_10_5, color_hue, color_sat, color_light, video_rgb"]
-    for m in window:
-        offset = (m.t - outlier_t).total_seconds()
-        rgb = f"({m.video_r:.0f},{m.video_g:.0f},{m.video_b:.0f})" if m.video_r is not None else "n/a"
-        sd = f"{m.sd_ratio_10_5:.3f}" if m.sd_ratio_10_5 is not None else "n/a"
-        marker = "  <-- OUTLIER" if m.t == outlier_t else ""
-        lines.append(
-            f"{offset:+.0f}s, {m.f80:.3f}, {m.topsize:.3f}, {sd}, "
-            f"{m.color_hue:.3f}, {m.color_sat:.3f}, {m.color_light:.3f}, {rgb}{marker}"
-        )
-    return "\n".join(lines)
-
-
-def _build_user_prompt(channel: Channel, outlier: Outlier, window: list[Measurement]) -> str:
-    om = next((m for m in window if m.id == outlier.measurement_id), None)
-    sieve_block = "not available"
-    if om is not None and om.sieve_passing_raw:
-        sieve_block = ", ".join(f"{k}={v:.1f}%" for k, v in sorted(om.sieve_passing_raw.items()))
+def _build_user_prompt(
+    channel: Channel, outlier: Outlier, window: list[Measurement], harness: TenantHarness
+) -> str:
+    # Raw vendor sieve columns only exist on instruments that report them.
+    # A harness without the SDRatio field is a site whose rows carry no vendor
+    # sieve set either, so the block is omitted entirely rather than rendered
+    # as "not available" — an absent section can't be misread as a measurement.
+    sieve_block = ""
+    if any(f.column == "sd_ratio_10_5" for f in harness.evidence_fields):
+        om = next((m for m in window if m.id == outlier.measurement_id), None)
+        if om is not None and om.sieve_passing_raw:
+            rendered = ", ".join(f"{k}={v:.1f}%" for k, v in sorted(om.sieve_passing_raw.items()))
+            sieve_block = f"\nRaw vendor sieve passing % at the event sample (INCHES): {rendered}\n"
 
     return f"""Channel: {channel.name} ({channel.id}), belt kind: {channel.belt}
-Channel baseline: F80={channel.base_f80:.3f}, Topsize={channel.base_topsize:.3f} (learned from this channel's own history)
+Channel baseline: F80={channel.base_f80:.3f}, Topsize={channel.base_topsize:.3f} \
+(learned from this channel's own history)
 
-Outlier:
+Event:
   time: {outlier.t.isoformat()}
   type: {outlier.type}
   metric: {outlier.metric} = {outlier.value:.3f} {outlier.unit}
@@ -140,13 +86,12 @@ Outlier:
   deviation: {outlier.deviation:.2f} sigma
   severity: {outlier.sev}
   detector confidence: {outlier.confidence:.2f}
+{sieve_block}
+Measurement window ({harness.context.window_before} samples before, \
+{harness.context.window_after} after):
+{harness.format_window(window, outlier.t)}
 
-Real sieve passing % at the outlier sample (raw vendor columns, inches): {sieve_block}
-
-Measurement window (~{WINDOW_BEFORE} samples before, {WINDOW_AFTER} after the outlier):
-{_format_window(window, outlier.t)}
-
-Diagnose the root cause of this outlier."""
+Diagnose the root cause of this event."""
 
 
 _TRAILING_TAG_ARTIFACT = re.compile(r"(\s*</[\w_]+>)+\s*$")
@@ -167,6 +112,11 @@ class DiagnosticAgentError(RuntimeError):
     pass
 
 
+def resolve_harness(session: Session, channel: Channel) -> TenantHarness:
+    tenant = session.query(Tenant).filter(Tenant.id == channel.tenant_id).first()
+    return harness_for_tenant(tenant)
+
+
 def run_diagnosis(session: Session, outlier_id: str) -> OutlierDiagnosis:
     if not settings.anthropic_api_key:
         raise DiagnosticAgentError("ANTHROPIC_API_KEY is not configured")
@@ -178,48 +128,66 @@ def run_diagnosis(session: Session, outlier_id: str) -> OutlierDiagnosis:
     if channel is None:
         raise DiagnosticAgentError(f"no channel {outlier.channel_id}")
 
-    window = _window_for(session, outlier)
-    user_prompt = _build_user_prompt(channel, outlier, window)
+    # The tenant that owns the channel selects the harness: prompt, evidence
+    # fields, failure categories, window size, and model.
+    harness = resolve_harness(session, channel)
+    model = harness.model or settings.diagnostic_model
+
+    window = _window_for(session, outlier, harness)
+    user_prompt = _build_user_prompt(channel, outlier, window, harness)
+
+    # Prompt caching: the system prompt + tool schema are identical for every
+    # diagnosis within a tenant, so marking the end of the system block as a
+    # cache breakpoint makes each subsequent call re-read that prefix at ~10%
+    # of input price instead of paying full rate.
+    system_blocks: list[dict] = [{"type": "text", "text": harness.system_prompt()}]
+    if harness.context.cache_system_prompt:
+        system_blocks[-1]["cache_control"] = {"type": "ephemeral"}
 
     client = Anthropic(api_key=settings.anthropic_api_key)
     diag_id = f"DIAG-{uuid.uuid4().hex[:12]}"
 
+    def _error(msg: str, usage=None) -> OutlierDiagnosis:
+        return OutlierDiagnosis(
+            id=diag_id, outlier_id=outlier_id, created_at=datetime.now(timezone.utc),
+            status="error", model=model, error=msg,
+            input_tokens=getattr(usage, "input_tokens", 0) or 0,
+            output_tokens=getattr(usage, "output_tokens", 0) or 0,
+        )
+
     try:
         resp = client.messages.create(
-            model=settings.diagnostic_model,
-            max_tokens=2048,
-            system=SYSTEM_PROMPT,
-            tools=[DIAGNOSIS_TOOL],
+            model=model,
+            max_tokens=harness.context.max_output_tokens,
+            system=system_blocks,
+            tools=[harness.diagnosis_tool()],
             tool_choice={"type": "tool", "name": "submit_diagnosis"},
             messages=[{"role": "user", "content": user_prompt}],
         )
     except Exception as exc:  # noqa: BLE001 — persist the failure, don't crash the request
-        return OutlierDiagnosis(
-            id=diag_id, outlier_id=outlier_id, created_at=datetime.now(timezone.utc),
-            status="error", model=settings.diagnostic_model, error=str(exc),
-        )
+        return _error(str(exc))
 
     if resp.stop_reason == "max_tokens":
-        return OutlierDiagnosis(
-            id=diag_id, outlier_id=outlier_id, created_at=datetime.now(timezone.utc),
-            status="error", model=settings.diagnostic_model,
-            error="response truncated at max_tokens — tool input is incomplete/invalid JSON",
-            input_tokens=resp.usage.input_tokens, output_tokens=resp.usage.output_tokens,
+        return _error(
+            "response truncated at max_tokens — tool input is incomplete/invalid JSON",
+            resp.usage,
         )
 
     tool_use = next((b for b in resp.content if b.type == "tool_use"), None)
     if tool_use is None:
-        return OutlierDiagnosis(
-            id=diag_id, outlier_id=outlier_id, created_at=datetime.now(timezone.utc),
-            status="error", model=settings.diagnostic_model,
-            error="model did not call submit_diagnosis",
-            input_tokens=resp.usage.input_tokens, output_tokens=resp.usage.output_tokens,
-        )
+        return _error("model did not call submit_diagnosis", resp.usage)
 
     data = tool_use.input
-    price_in, price_out = _price_for(settings.diagnostic_model)
+    price_in, price_out = _price_for(model)
+    # Cached prefix tokens are billed differently: writing the cache costs
+    # 1.25x input, reading it 0.1x. Folding them in here keeps cost_usd
+    # comparable across cached and uncached runs.
+    cache_write = getattr(resp.usage, "cache_creation_input_tokens", 0) or 0
+    cache_read = getattr(resp.usage, "cache_read_input_tokens", 0) or 0
     cost = (
         resp.usage.input_tokens / 1_000_000 * price_in
+        + cache_write / 1_000_000 * price_in * 1.25
+        + cache_read / 1_000_000 * price_in * 0.10
         + resp.usage.output_tokens / 1_000_000 * price_out
     )
 
@@ -227,16 +195,24 @@ def run_diagnosis(session: Session, outlier_id: str) -> OutlierDiagnosis:
     if not isinstance(raw_hypotheses, list):
         raw_hypotheses = []
 
+    valid_categories = {c.id for c in harness.failure_categories}
     hypotheses = []
     for h in raw_hypotheses:
         if not isinstance(h, dict):
             hypotheses.append({
-                "cause": _clean(str(h)), "confidence": 0.0,
+                "cause": _clean(str(h)), "failure_category": None, "confidence": 0.0,
                 "supporting_evidence": "", "contradicting_evidence": None,
             })
             continue
+        # The enum in the tool schema is a strong constraint, not a guarantee.
+        # A category outside this tenant's set is dropped rather than stored,
+        # so nothing downstream can group by a category that doesn't exist here.
+        category = _clean(h.get("failure_category")) or None
+        if category not in valid_categories:
+            category = None
         hypotheses.append({
             "cause": _clean(h.get("cause")),
+            "failure_category": category,
             "confidence": h.get("confidence", 0.0),
             "supporting_evidence": _clean(h.get("supporting_evidence")),
             "contradicting_evidence": _clean(h.get("contradicting_evidence")) or None,
@@ -250,7 +226,7 @@ def run_diagnosis(session: Session, outlier_id: str) -> OutlierDiagnosis:
         outlier_id=outlier_id,
         created_at=datetime.now(timezone.utc),
         status="complete",
-        model=settings.diagnostic_model,
+        model=model,
         root_cause=_clean(data.get("root_cause")),
         hypotheses=hypotheses,
         confidence=data.get("confidence", 0.0),

@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2080" height="2194" viewBox="100 -4 2080 2194" style="background:#fff">
+<defs><marker id="ah" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="context-stroke"/></marker></defs>
+<rect x="100" y="-4" width="2080" height="2194" fill="#ffffff"/>
+<text x="140" y="74.0" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#1e40af" text-anchor="start">Reliat — Data Architecture</text>
+<text x="140" y="107.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">How a file of unknown shape becomes a grounded, cited answer — and where the tenant boundary sits at every step.</text>
+<text x="140" y="132.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#b45309" text-anchor="start">Solid = built.  Dashed = designed, not built.  Red = the isolation boundary.</text>
+<rect x="1840" y="36" width="40" height="26" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1892" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">built</text>
+<rect x="1980" y="36" width="40" height="26" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="2032" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">planned</text>
+<rect x="140" y="190" width="2000" height="300" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="179.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">1 · INGESTION — format, meaning, and trust are three separate jobs</text>
+<rect x="170" y="245" width="250" height="95" rx="8" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+<text x="295.0" y="274.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">RAW FILE</text>
+<text x="295.0" y="289.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">csv · tsv · parquet</text>
+<text x="295.0" y="304.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">xls/xlsx · jsonl</text>
+<text x="295.0" y="319.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">shape unknown</text>
+<rect x="465" y="245" width="250" height="95" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="590.0" y="267.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">READER</text>
+<text x="590.0" y="282.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">bytes → records</text>
+<text x="590.0" y="297.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle"></text>
+<text x="590.0" y="312.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">format only —</text>
+<text x="590.0" y="327.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">no domain knowledge</text>
+<rect x="760" y="245" width="290" height="95" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="905.0" y="269.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">MAPPING PROFILE</text>
+<text x="905.0" y="282.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">declarative YAML, versioned</text>
+<text x="905.0" y="296.6" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle"></text>
+<text x="905.0" y="310.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">column → canonical field</text>
+<text x="905.0" y="324.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">unit · timezone · nulls</text>
+<rect x="1095" y="245" width="290" height="95" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1240.0" y="269.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">CANONICALIZER</text>
+<text x="1240.0" y="282.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">invariants + quality flags</text>
+<text x="1240.0" y="296.6" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle"></text>
+<text x="1240.0" y="310.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">F10≤F20≤…≤F90</text>
+<text x="1240.0" y="324.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">units · tz-aware UTC</text>
+<rect x="1430" y="245" width="250" height="95" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1555.0" y="269.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">WRITER</text>
+<text x="1555.0" y="282.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">idempotent</text>
+<text x="1555.0" y="296.6" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle"></text>
+<text x="1555.0" y="310.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">sha256 short-circuit</text>
+<text x="1555.0" y="324.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">ON CONFLICT DO NOTHING</text>
+<polyline points="422,292 463,292" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="717,292 758,292" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1052,292 1093,292" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1387,292 1428,292" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="1730" y="245" width="340" height="95" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+<text x="1900.0" y="282.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">source_assets   ← THE SPINE</text>
+<text x="1900.0" y="296.6" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">tenant · sha256 · storage_uri</text>
+<text x="1900.0" y="310.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">profile + version · status · counts</text>
+<polyline points="1682,292 1728,292" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#ah)"/>
+<text x="170" y="382.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#1e40af" text-anchor="start">Why this split:</text>
+<text x="170" y="405.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">Format is the easy part — a reader swap. Meaning is the hard part. Today ingest_minitab.py knows CEMEX&#x27;s column names, units, timezone and</text>
+<text x="170" y="427.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">baseline policy in 124 lines of Python; customer #2 means a second file exactly like it. A profile is data, so it can be diffed, reviewed by a</text>
+<text x="170" y="449.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">metallurgist, and REPLAYED when a mapping turns out wrong. A loader is code — it can only be rewritten.</text>
+<rect x="1730" y="368" width="298.59999999999997" height="69.25" rx="8" fill="#1e293b" stroke="#1e293b" stroke-width="1"/>
+<text x="1744" y="393.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#22c55e" text-anchor="start">measurements.source_asset_id → provenance</text>
+<text x="1744" y="406.8" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#22c55e" text-anchor="start">every number traces to a file, an upload,</text>
+<text x="1744" y="420.5" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#22c55e" text-anchor="start">a person, and a mapping version</text>
+<rect x="140" y="570" width="2000" height="560" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="559.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">2 · WHERE DATA LIVES — three planes, one boundary</text>
+<rect x="170" y="620" width="560" height="210" rx="8" fill="transparent" stroke="#1e3a5f" stroke-width="3"/>
+<text x="190" y="649.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#1e3a5f" text-anchor="start">CONTROL PLANE   reliat_control</text>
+<text x="190" y="670.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">shared · no measurement data ever</text>
+<rect x="195" y="686" width="510" height="28" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="450.0" y="704.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">tenants  (db_dsn_ref → secret manager)</text>
+<rect x="195" y="720" width="510" height="28" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="450.0" y="738.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">users · sessions · oauth_accounts</text>
+<rect x="195" y="754" width="510" height="28" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="450.0" y="772.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">audit_events   (append-only)</text>
+<rect x="195" y="788" width="510" height="28" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="450.0" y="806.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">usage_ledger   (tokens · cost)</text>
+<rect x="780" y="620" width="620" height="400" rx="8" fill="transparent" stroke="#dc2626" stroke-width="3"/>
+<text x="800" y="649.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#dc2626" text-anchor="start">TENANT PLANE   one database per customer</text>
+<text x="800" y="670.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">isolated · separately backed up · DROP DATABASE = deletion</text>
+<rect x="805" y="686" width="570" height="150" rx="8" fill="#f0fdf4" stroke="#047857" stroke-width="2"/>
+<text x="820" y="709.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#047857" text-anchor="start">reliat_tn_cemex</text>
+<text x="820" y="731.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">channels → measurements → outliers → diagnoses</text>
+<text x="820" y="759.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">21,138 REAL rows · source=&#x27;cemex_minitab&#x27;</text>
+<text x="820" y="787.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">event_signatures  (vector, for similarity)</text>
+<text x="820" y="815.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">documents · doc_chunks  (vector, tenant SOPs)</text>
+<rect x="805" y="850" width="570" height="150" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="820" y="873.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#1e3a5f" text-anchor="start">reliat_tn_demo</text>
+<text x="820" y="895.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">same schema, different data</text>
+<text x="820" y="923.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">15,840 synthetic rows · source=&#x27;synthetic&#x27;</text>
+<text x="820" y="951.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">no vendor columns exist here</text>
+<text x="820" y="979.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="start">→ which is why its harness differs</text>
+<rect x="1450" y="620" width="620" height="400" rx="8" fill="transparent" stroke="#6d28d9" stroke-width="3"/>
+<text x="1470" y="649.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#6d28d9" text-anchor="start">KNOWLEDGE PLANE   shared, curated</text>
+<text x="1470" y="670.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">abstractions only — never a customer&#x27;s rows</text>
+<rect x="1475" y="690" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="709.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">failure_modes      FM-014 screen blinding</text>
+<rect x="1475" y="726" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="745.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">evidence_signatures   how it LOOKS in data</text>
+<rect x="1475" y="762" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="781.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">discriminators     how to tell it from lookalikes</text>
+<rect x="1475" y="798" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="817.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">remediation_actions   ← THE AGENT&#x27;S ACTION SPACE</text>
+<rect x="1475" y="834" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="853.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">impact_priors      downtime p50/p90, sample_size</text>
+<rect x="1475" y="870" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="889.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">knowledge_evidence  confirmed_count, site_count</text>
+<rect x="1475" y="906" width="570" height="30" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1760.0" y="925.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">knowledge_embeddings  vector(1024)</text>
+<text x="1475" y="963.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#64748b" text-anchor="start">Six categories: feed_material · equipment · process_control</text>
+<text x="1475" y="985.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#64748b" text-anchor="start">instrument · environmental · upstream_blast</text>
+<rect x="1080" y="1042" width="380" height="62" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+<text x="1270.0" y="1070.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">PROMOTION GATE  —  human reviewed</text>
+<text x="1270.0" y="1085.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">pattern + count + discriminator only</text>
+<polyline points="1150,1022 1180,1040" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1430,1040 1600,1022" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ah)"/>
+<text x="170" y="1062.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#1e40af" text-anchor="start">What crosses the gate:</text>
+<text x="170" y="1084.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#047857" text-anchor="start">&quot;FM-014: topsize +2σ sustained &gt;8min with F80 flat.</text>
+<text x="170" y="1104.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#047857" text-anchor="start"> Confirmed 23× across 6 sites. Discriminator: F10 unchanged.&quot;</text>
+<text x="660" y="1062.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#dc2626" text-anchor="start">What never does:</text>
+<text x="660" y="1084.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">CEMEX&#x27;s rows, values, timestamps,</text>
+<text x="660" y="1104.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">channel names, or ids.</text>
+<rect x="140" y="1190" width="2000" height="330" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1179.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">3 · RETRIEVAL — three modes, chosen by question shape (this is what &quot;RAG&quot; means here)</text>
+<rect x="170" y="1240" width="600" height="230" rx="8" fill="transparent" stroke="#047857" stroke-width="2"/>
+<text x="190" y="1269.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#047857" text-anchor="start">MODE A · STRUCTURED</text>
+<text x="190" y="1290.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">~80% of real questions</text>
+<text x="190" y="1318.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">&quot;outliers in the last 3 hours&quot;</text>
+<text x="190" y="1340.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">&quot;critical count by channel&quot;</text>
+<text x="190" y="1362.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="190" y="1384.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">typed tools → reviewed SQL</text>
+<text x="190" y="1406.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">bound parameters, never text-to-SQL</text>
+<text x="190" y="1428.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="190" y="1450.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">EXACT. Reproducible. Cited.</text>
+<rect x="820" y="1240" width="600" height="230" rx="8" fill="transparent" stroke="#6d28d9" stroke-width="2"/>
+<text x="840" y="1269.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#6d28d9" text-anchor="start">MODE B · SEMANTIC (vector)</text>
+<text x="840" y="1290.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">narrow text corpus only</text>
+<text x="840" y="1318.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">&quot;have we seen this before?&quot;</text>
+<text x="840" y="1340.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">&quot;what does the SOP say?&quot;</text>
+<text x="840" y="1362.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="840" y="1384.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">pgvector over diagnoses, notes, SOPs</text>
+<text x="840" y="1406.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">tenant_id filter is MANDATORY</text>
+<text x="840" y="1428.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="840" y="1450.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">Returns CANDIDATES with citations.</text>
+<rect x="1470" y="1240" width="600" height="230" rx="8" fill="transparent" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1490" y="1269.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#1e3a5f" text-anchor="start">MODE C · SIGNAL SHAPE</text>
+<text x="1490" y="1290.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">not an LLM embedding</text>
+<text x="1490" y="1318.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">&quot;outliers that look like this one&quot;</text>
+<text x="1490" y="1340.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="1490" y="1362.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">engineered feature vector per event</text>
+<text x="1490" y="1384.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">normalized PSD deltas, z-scores, duration</text>
+<text x="1490" y="1406.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start"></text>
+<text x="1490" y="1428.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">Interpretable, deterministic, free.</text>
+<text x="1490" y="1450.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">Replaces the faked &quot;Similar past&quot; panel.</text>
+<text x="170" y="1507.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#dc2626" text-anchor="start">Do NOT embed the time series.  &quot;Outliers in the last 3 hours&quot; is a WHERE clause — nearest-neighbour returns semantically nearby rows, which has no</text>
+<text x="170" y="1531.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#dc2626" text-anchor="start">relationship to CORRECT rows. The wrong count arrives sounding exactly like a right one. Structured pre-filter first; vectors are the fallback.</text>
+<rect x="140" y="1610" width="2000" height="350" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1599.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">4 · CONTEXT WINDOW — assembled by code, never chosen by the model</text>
+<text x="180" y="1672.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">SECTION</text>
+<text x="690" y="1672.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">BUDGET</text>
+<text x="900" y="1672.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">RETRIEVAL</text>
+<text x="1500" y="1672.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">TRUNCATION</text>
+<polyline points="170,1682 2040,1682" fill="none" stroke="#64748b" stroke-width="1"/>
+<text x="180" y="1708.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">system contract + tool defs</text>
+<text x="690" y="1708.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">3k</text>
+<text x="900" y="1708.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">static</text>
+<text x="1500" y="1708.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">never — CACHE BREAKPOINT HERE</text>
+<text x="180" y="1738.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">candidate failure modes</text>
+<text x="690" y="1738.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">3k</text>
+<text x="900" y="1738.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">STRUCTURED signature match, top 8</text>
+<text x="1500" y="1738.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">drop lowest prior first</text>
+<text x="180" y="1768.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">event + measurement window</text>
+<text x="690" y="1768.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">2k</text>
+<text x="900" y="1768.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">~40 downsampled pts + stats in Python</text>
+<text x="1500" y="1768.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">widen stride</text>
+<text x="180" y="1798.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">tenant precedent</text>
+<text x="690" y="1798.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">2k</text>
+<text x="900" y="1798.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">kNN on event_signatures, top 3</text>
+<text x="1500" y="1798.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">fewer neighbours</text>
+<text x="180" y="1828.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">text evidence</text>
+<text x="690" y="1828.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">2k</text>
+<text x="900" y="1828.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">pgvector top-k, tenant-filtered</text>
+<text x="1500" y="1828.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">fewer chunks</text>
+<text x="180" y="1858.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="start">tool results (loop)</text>
+<text x="690" y="1858.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">3k</text>
+<text x="900" y="1858.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">live</text>
+<text x="1500" y="1858.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">row cap + explicit elision marker</text>
+<polyline points="170,1878 2040,1878" fill="none" stroke="#64748b" stroke-width="1"/>
+<text x="180" y="1903.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#1e40af" text-anchor="start">TARGET ~15k input · hard ceiling 25k · max 8 tool calls · per-tenant daily cost ceiling</text>
+<text x="180" y="1928.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">A 200k context window is a budget, not a target. Compute statistics in Python — never make the model do arithmetic.</text>
+<text x="140" y="2038.0" font-family="ui-monospace,Menlo,monospace" font-size="18" fill="#1e40af" text-anchor="start">BUILD ORDER</text>
+<rect x="170" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="282.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">1</text>
+<text x="282.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">control / tenant plane split</text>
+<text x="282.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">+ connection router</text>
+<polyline points="397,2105 413,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="415" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="527.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">2</text>
+<text x="527.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">finish provenance</text>
+<text x="527.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">ON CONFLICT + sha256</text>
+<polyline points="642,2105 658,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="660" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="772.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">3</text>
+<text x="772.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">timestamptz + Site.timezone</text>
+<text x="772.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">metric registry</text>
+<polyline points="887,2105 903,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="905" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1017.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">4</text>
+<text x="1017.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">reader / profile split</text>
+<text x="1017.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">port CEMEX to YAML</text>
+<polyline points="1132,2105 1148,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="1150" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1262.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">5</text>
+<text x="1262.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">tests + CI</text>
+<text x="1262.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">(gates everything after)</text>
+<polyline points="1377,2105 1393,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="1395" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1507.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">6</text>
+<text x="1507.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">knowledge plane</text>
+<text x="1507.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">~20 seeded failure modes</text>
+<polyline points="1622,2105 1638,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="1640" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1752.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">7</text>
+<text x="1752.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">tool surface</text>
+<text x="1752.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">+ ContextBuilder</text>
+<polyline points="1867,2105 1883,2105" fill="none" stroke="#64748b" stroke-width="1" marker-end="url(#ah)"/>
+<rect x="1885" y="2060" width="225" height="90" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1997.5" y="2095.4" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">8</text>
+<text x="1997.5" y="2109.1" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">artifact + dispositions</text>
+<text x="1997.5" y="2122.9" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#374151" text-anchor="middle">(the flywheel)</text>
+</svg>

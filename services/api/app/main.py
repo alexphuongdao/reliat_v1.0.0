@@ -12,6 +12,7 @@ from .config import settings
 from .db import init_db, session_scope
 from .routes.auth import router as auth_router
 from .routes.channels import router as channels_router
+from .routes.harness import router as harness_router
 from .routes.outliers import router as outliers_router
 from .routes.usage import router as usage_router
 from .seed import is_seeded, seed_demo
@@ -68,6 +69,7 @@ app.include_router(auth_router)
 app.include_router(channels_router)
 app.include_router(outliers_router)
 app.include_router(usage_router)
+app.include_router(harness_router)
 
 
 @app.get("/api/health")

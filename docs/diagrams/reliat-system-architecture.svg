@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1924" viewBox="100 -4 1840 1924" style="background:#fff">
+<defs><marker id="ah" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="context-stroke"/></marker></defs>
+<rect x="100" y="-4" width="1840" height="1924" fill="#ffffff"/>
+<text x="140" y="74.0" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#1e40af" text-anchor="start">Reliat — System Architecture</text>
+<text x="140" y="107.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">One request, top to bottom. The tenant boundary is the red rail: it is established once and enforced at every layer below it.</text>
+<text x="140" y="132.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#b45309" text-anchor="start">State as of 2026-08-03. Solid = built and running.  Dashed = planned, not built.</text>
+<rect x="1560" y="36" width="40" height="26" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1612" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">built</text>
+<rect x="1700" y="36" width="40" height="26" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1752" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">planned</text>
+<rect x="140" y="190" width="1700" height="150" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="179.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">1 · WHO SIGNS IN</text>
+<rect x="170" y="225" width="520" height="95" rx="8" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+<text x="430.0" y="260.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">cemex</text>
+<text x="430.0" y="277.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">CEMEX · tn_cemex</text>
+<text x="430.0" y="295.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">1 channel · 21,138 REAL rows</text>
+<rect x="730" y="225" width="520" height="95" rx="8" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+<text x="990.0" y="260.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">test</text>
+<text x="990.0" y="277.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">Demo Plant · tn_demo</text>
+<text x="990.0" y="295.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">11 channels · 15,840 synthetic</text>
+<rect x="1290" y="225" width="520" height="95" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="1550.0" y="260.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">admin</text>
+<text x="1550.0" y="277.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">superadmin · tenant_id = NULL</text>
+<text x="1550.0" y="295.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">sees every tenant</text>
+<rect x="140" y="420" width="1700" height="190" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="409.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">2 · WEB — Next.js 16</text>
+<rect x="170" y="460" width="380" height="125" rx="8" fill="#60a5fa" stroke="#1e3a5f" stroke-width="2"/>
+<text x="360.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">proxy.ts</text>
+<text x="360.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Next 16&#x27;s rename of</text>
+<text x="360.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">middleware.ts</text>
+<text x="360.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">optimistic redirect</text>
+<rect x="590" y="460" width="380" height="125" rx="8" fill="#60a5fa" stroke="#1e3a5f" stroke-width="2"/>
+<text x="780.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">(auth)/login</text>
+<text x="780.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Server Action</text>
+<text x="780.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">password never</text>
+<text x="780.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">reaches client JS</text>
+<rect x="1010" y="460" width="380" height="125" rx="8" fill="#60a5fa" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1200.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">(app)/* + AppShell</text>
+<text x="1200.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">requireUser() on</text>
+<text x="1200.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">every server render</text>
+<text x="1200.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">authoritative check</text>
+<rect x="1430" y="460" width="380" height="125" rx="8" fill="#60a5fa" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1620.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">lib/api.ts</text>
+<text x="1620.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">credentials: include</text>
+<text x="1620.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">401 → /login</text>
+<text x="1620.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">no mock fallback</text>
+<polyline points="430,320 430,458" fill="none" stroke="#c2410c" stroke-width="2" marker-end="url(#ah)"/>
+<text x="379.6" y="450.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#c2410c" text-anchor="start">session cookie</text>
+<polyline points="990,320 760,458" fill="none" stroke="#c2410c" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1550,320 1200,458" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="140" y="700" width="1700" height="290" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="689.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">3 · API — FastAPI  (owns identity and every query)</text>
+<rect x="170" y="745" width="440" height="105" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="390.0" y="786.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">get_principal()</text>
+<text x="390.0" y="802.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">cookie → sessions row →</text>
+<text x="390.0" y="818.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">Principal(user, tenant)</text>
+<rect x="650" y="745" width="440" height="105" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="870.0" y="786.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">tenant-scoped routes</text>
+<text x="870.0" y="802.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">owned_channel() /</text>
+<text x="870.0" y="818.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">_owned_outlier()</text>
+<rect x="1130" y="745" width="440" height="105" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1350.0" y="786.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">harness_for_tenant()</text>
+<text x="1350.0" y="802.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">selects the agent profile</text>
+<text x="1350.0" y="818.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#ffffff" text-anchor="middle">for this tenant</text>
+<polyline points="360,585 360,743" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="170" y="878" width="1440" height="78" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="3"/>
+<text x="890.0" y="913.5" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">▲  THE TENANT BOUNDARY  —  every data query is filtered by principal.tenant_id</text>
+<text x="890.0" y="931.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">cross-tenant id ⇒ 404, never 403  (403 would confirm the row exists)</text>
+<polyline points="390,852 390,876" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="870,852 870,876" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1350,852 1350,876" fill="none" stroke="#dc2626" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="140" y="1080" width="1700" height="350" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1069.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">4 · AGENT HARNESS — one model, per-tenant context</text>
+<rect x="170" y="1125" width="360" height="150" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="350.0" y="1156.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">TenantHarness</text>
+<text x="350.0" y="1172.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"></text>
+<text x="350.0" y="1188.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">evidence fields</text>
+<text x="350.0" y="1204.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">metric glossary</text>
+<text x="350.0" y="1221.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">failure categories</text>
+<text x="350.0" y="1237.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">operating rules</text>
+<text x="350.0" y="1253.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">window · model</text>
+<rect x="590" y="1120" width="560" height="90" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="870.0" y="1154.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">cemex profile  ·  window 20/5</text>
+<text x="870.0" y="1169.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">9 evidence fields  incl. SDRatio10_5, VideoRGB</text>
+<text x="870.0" y="1184.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">6 categories  incl. upstream_blast</text>
+<rect x="590" y="1240" width="560" height="90" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="870.0" y="1274.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">demo profile  ·  window 12/4</text>
+<text x="870.0" y="1289.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">5 evidence fields  (no vendor columns exist)</text>
+<text x="870.0" y="1304.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">4 categories</text>
+<polyline points="532,1170 588,1165" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="532,1230 588,1285" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="1210" y="1150" width="250" height="140" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="1335.0" y="1179.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">Diagnostic</text>
+<text x="1335.0" y="1194.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">Agent</text>
+<text x="1335.0" y="1209.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle"></text>
+<text x="1335.0" y="1224.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">system prompt +</text>
+<text x="1335.0" y="1239.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">tool schema</text>
+<text x="1335.0" y="1254.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">GENERATED from</text>
+<text x="1335.0" y="1269.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">the profile</text>
+<polyline points="1152,1165 1208,1200" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1152,1285 1208,1240" fill="none" stroke="#6d28d9" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="1520" y="1150" width="290" height="140" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1665.0" y="1187.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">Anthropic API</text>
+<text x="1665.0" y="1202.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">claude-haiku-4-5</text>
+<text x="1665.0" y="1217.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle"></text>
+<text x="1665.0" y="1232.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">stateless —</text>
+<text x="1665.0" y="1247.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">context is the</text>
+<text x="1665.0" y="1262.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">only difference</text>
+<polyline points="1462,1220 1518,1220" fill="none" stroke="#047857" stroke-width="2" marker-end="url(#ah)"/>
+<text x="1478" y="1109.0" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#047857" text-anchor="start">prompt cache on stable prefix</text>
+<text x="170" y="1362.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#6d28d9" text-anchor="start">Same model. Same code path. Different context ⇒ correctly different answers.</text>
+<text x="170" y="1387.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">Verified: cemex cites SDRatio10_5 + RGB;  demo cites neither, because its harness never offers them.</text>
+<rect x="140" y="1520" width="1700" height="360" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1509.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">5 · DATA — Postgres 16 (pgvector image)</text>
+<rect x="170" y="1565" width="740" height="280" rx="8" fill="transparent" stroke="#047857" stroke-width="3"/>
+<text x="190" y="1595.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#047857" text-anchor="start">TODAY — one database, tenant_id column</text>
+<rect x="195" y="1614" width="690" height="30" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="540.0" y="1633.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">tenants · users · sessions · oauth_accounts</text>
+<rect x="195" y="1650" width="690" height="30" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="540.0" y="1669.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">channels  (tenant_id FK)  ← the boundary</text>
+<rect x="195" y="1686" width="690" height="30" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="540.0" y="1705.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">measurements  21,138 real + 15,840 synthetic</text>
+<rect x="195" y="1722" width="690" height="30" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="540.0" y="1741.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">outliers · outlier_diagnoses</text>
+<rect x="195" y="1758" width="690" height="30" rx="8" fill="#93c5fd" stroke="#1e3a5f" stroke-width="1"/>
+<text x="540.0" y="1777.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">source_assets  (provenance, empty)</text>
+<text x="195" y="1812.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">Isolation enforced in Python, per route.</text>
+<rect x="960" y="1565" width="850" height="280" rx="8" fill="transparent" stroke="#1e40af" stroke-width="3" stroke-dasharray="8 5"/>
+<text x="980" y="1595.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#1e40af" text-anchor="start">TARGET — control plane + one DB per tenant</text>
+<rect x="985" y="1614" width="800" height="46" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1385.0" y="1641.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">reliat_control   —  tenants · users · sessions · audit · usage</text>
+<rect x="985" y="1672" width="385" height="46" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1177.5" y="1699.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">reliat_tn_cemex</text>
+<rect x="1400" y="1672" width="385" height="46" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1592.5" y="1699.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">reliat_tn_demo</text>
+<rect x="985" y="1730" width="800" height="46" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="1" stroke-dasharray="8 5"/>
+<text x="1385.0" y="1757.5" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#374151" text-anchor="middle">knowledge plane  —  failure_modes · remediation_actions · impact_priors</text>
+<text x="985" y="1804.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">Isolation enforced by the database. DROP DATABASE = deletion.</text>
+<text x="985" y="1826.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">Needs PgBouncer + a migration runner. Slice 1.</text>
+<polyline points="915,1705 955,1705" fill="none" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5" marker-end="url(#ah)"/>
+<text x="929.8" y="1691.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#1e40af" text-anchor="start">slice 1</text>
+<polyline points="700,990 700,1078" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="700,1432 700,1518" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<text x="613.6" y="1510.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">tenant-scoped reads only</text>
+</svg>

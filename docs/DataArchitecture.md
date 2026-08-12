@@ -444,6 +444,14 @@ Ranked by likelihood × damage for this specific product:
 
 ### 6.2 Tenant isolation: three layers, and why one is not enough
 
+> **Superseded by `docs/PlatformArchitecture.md` §2.2.** This section
+> recommends RLS on a shared schema. The tenancy model is now
+> **database-per-tenant** on a shared cluster, because physical separation
+> became an explicit product requirement. Layers 1 and 3 below still apply
+> unchanged; layer 2 (RLS) is replaced by connection-level routing, and the
+> `tenant_id` columns are retained as defence in depth rather than as the
+> primary boundary.
+
 Today: one layer. `owned_channel()` called from each route. Currently complete
 and currently correct — and one forgotten `Depends` from being wrong. The whole
 class of incident #1 is "someone added a route on a Friday."

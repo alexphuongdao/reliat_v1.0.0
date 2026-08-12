@@ -43,11 +43,21 @@ startup:
 
 | Username | Password | Sees |
 |---|---|---|
-| `cemex` | `Cemex-Reliat-2026!` | The CEMEX plant data only |
+| `cemex` | `Cemex-Reliat-2026!` | **Real data only** — `cv42`, 21,138 rows from the MINITAB export. Nothing synthetic. |
+| `test` | `Test-Reliat-2026!` | **The demo plant** — 11 simulated channels. Nothing real. |
 | `admin` | `Admin-Reliat-2026!` | Every customer (platform superadmin) |
 
-These are **demo credentials in a git-tracked file** — fine for a local demo,
-change them before this faces any real network. Override with
+`test` exists so the UI can be demonstrated on a populated fleet without
+putting fabricated numbers in front of the real customer. Sign in as `cemex`
+and you see one channel, because that is what CEMEX actually has — panels
+with no data behind them say **Unavailable** rather than showing a plausible
+placeholder.
+
+Created by `python -m app.provision_demo` (idempotent — see
+`services/api/app/provision_demo.py`).
+
+These are **demo credentials in a git-tracked public repo** — fine for a local
+demo, change them before this faces any real network. Override with
 `RELIAT_SEED_CEMEX_PASSWORD` / `RELIAT_SEED_ADMIN_PASSWORD` in `.env`.
 
 > Passwords are only applied when a profile is **first created**. Changing

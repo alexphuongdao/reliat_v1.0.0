@@ -709,6 +709,43 @@ export function ScreenLoading({ label = "Loading…" }: { label?: string }) {
   );
 }
 
+// ─── Unavailable ─────────────────────────────────────────────────────
+/**
+ * "This capability doesn't exist yet for this tenant."
+ *
+ * Distinct from ScreenError (something broke) and ScreenLoading (wait).
+ * This is the state for a panel whose feature is genuinely unbuilt or whose
+ * tenant has no data behind it. It exists because the alternative — leaving
+ * a plausible hardcoded string in place — is indistinguishable from a
+ * working feature during a demo, and the customer finds out the hard way.
+ */
+export function Unavailable({
+  label,
+  reason,
+  compact = false,
+}: {
+  label: string;
+  reason?: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex", flexDirection: "column", gap: 4,
+        padding: compact ? "8px 10px" : "12px 14px",
+        marginBottom: 14,
+        background: "var(--surface-2)",
+        border: "1px dashed var(--border)",
+        borderRadius: "var(--r-sm)",
+        color: "var(--text-3)",
+      }}
+    >
+      <span style={{ fontSize: 12.5, color: "var(--text-2)" }}>{label}</span>
+      {reason && <span style={{ fontSize: 11.5, lineHeight: 1.5 }}>{reason}</span>}
+    </div>
+  );
+}
+
 // ─── ScreenError ─────────────────────────────────────────────────────
 /** Honest failure state. Deliberately not a mock-data fallback: once the
  *  app is multi-tenant, quietly rendering demo numbers when the API is

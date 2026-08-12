@@ -46,6 +46,11 @@ services:
       RELIAT_OAUTH_MICROSOFT_TENANT: ${RELIAT_OAUTH_MICROSOFT_TENANT:-common}
     volumes:
       - ./services/api/app:/app/app
+      # Migrations are mounted too, so a new revision applies on restart
+      # without an image rebuild. Without this the container silently runs
+      # `alembic upgrade head` against whatever revisions were baked in at
+      # build time, and reports itself up to date while it is one behind.
+      - ./services/api/alembic:/app/alembic
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
