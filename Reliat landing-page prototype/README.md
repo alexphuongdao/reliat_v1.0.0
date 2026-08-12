@@ -66,6 +66,9 @@ Edit source files, run `python3 build.py`, and refresh the browser tab serving
 ## Static website assets
 
 - Brand artwork: `public/assets/brand/`
+- Approved product captures: `public/assets/images/`
+  - `auditable-incident-artifact.png` — real incident-detail interface used in
+    the closing artifact scene
 - Approved browser videos: `public/assets/video/`
   - `mine-hero-desktop.mp4` — one-shot truck / primary-crusher opening
   - `mine-conveyor-loop.mp4` — mirrored left-to-right conveyor footage with a
