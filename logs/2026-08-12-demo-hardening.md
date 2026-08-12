@@ -11,8 +11,49 @@ traceable; this file is updated per commit.
 | `v1.0.3` | `/channels` no longer crashes for tenants without `cv42` | 31 pass / 3 xfail |
 | `v1.0.4` | Detector stops asserting root causes it never inferred | 31 pass / 3 xfail |
 | `v1.0.5` | Real status chrome, per-tenant chart precision, row overlap | 31 pass / 3 xfail |
+| `v1.0.6` | Stored diagnoses load on expand instead of being re-bought | 31 pass / 3 xfail |
 
 ---
+
+## v1.0.6 — the UI was hiding diagnoses it had already paid for
+
+### Found while verifying v1.0.4
+
+After the UI rework I re-opened an outlier I had run the agent on earlier in the
+session. The panel offered **"Run Diagnostic Agent"** as though nothing had ever
+happened. The API disagreed:
+
+```
+GET /api/outliers/OUT-2D0F6591C525/diagnoses  →  8 stored diagnoses
+  DIAG-5df16d9fd542  claude-haiku-4-5   $0.010315
+  DIAG-0c865db4db36  claude-sonnet-5    $0.030069
+  ...                                   ≈ $0.14 total, on one outlier
+```
+
+`OutlierInboxRow` initialised `diagnosis` to `null` and only ever set it from a
+*new* run. `api.diagnoses(id)` already existed and was never called. So every
+page reload discarded the visible result of work that had been done, stored, and
+billed — and invited the operator to buy the same answer again.
+
+Bad in a demo. Worse in production, where it is a per-tenant cost leak with no
+symptom other than a bill.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `apps/web/components/screens/OutliersScreen.tsx` | On expand, fetch stored diagnoses and show the most recent non-error one. Failure is swallowed — the run button still works and the detector's measurement is already on screen. |
+
+### Verified
+
+| Check | Result |
+|---|---|
+| Reload, expand `OUT-2D0F6591C525` | Heading **"Agent diagnosis"**, ranked hypotheses 62 / 25 / 15%, `claude-sonnet-5 · 4218 tokens · $0.0302` |
+| Button label | "Re-run Diagnostic Agent" |
+| Outlier with no diagnosis | "What the detector measured" + "No recommended action yet" |
+| Backend suite | 31 passed, 3 xfailed |
+
+Both branches of the v1.0.4 heading logic are now exercised on real data.
 
 ## v1.0.5 — status chrome, chart precision, row overlap
 

@@ -452,6 +452,28 @@ function OutlierInboxRow({
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagError, setDiagError] = useState<string | null>(null);
 
+  // Load what has already been paid for. Diagnoses are persisted, but this
+  // component used to start at `null` and only fill in after a *new* run — so
+  // a page reload hid every stored diagnosis and invited the operator to buy
+  // the same answer again. One outlier had eight, about $0.14 of them.
+  useEffect(() => {
+    if (!expanded || diagnosis || diagLoading) return;
+    let cancelled = false;
+    api
+      .diagnoses(o.id)
+      .then((all) => {
+        if (cancelled) return;
+        const complete = all.filter((d) => d.status !== "error");
+        if (complete.length) setDiagnosis(complete[complete.length - 1]);
+      })
+      // A missing history is not worth an error banner — the run button still
+      // works, and the detector's measurement is already on screen.
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, o.id, diagnosis, diagLoading]);
+
   async function runDiagnosis() {
     setDiagLoading(true);
     setDiagError(null);
