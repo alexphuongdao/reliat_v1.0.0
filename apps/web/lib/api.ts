@@ -13,6 +13,8 @@
  */
 import type { SessionUser } from "./session.types";
 import type {
+  AgentThreadDetail,
+  AgentThreadSummary,
   Channel,
   Diagnosis,
   Outlier,
@@ -122,6 +124,12 @@ export const api = {
 
   diagnoses: (id: string) =>
     getJSON<Diagnosis[]>(`/api/outliers/${encodeURIComponent(id)}/diagnoses`),
+
+  /** Durable agent conversations. Tenant-scoped server-side from the session. */
+  agentThreads: () => getJSON<AgentThreadSummary[]>("/api/agent/threads"),
+
+  agentThread: (id: string) =>
+    getJSON<AgentThreadDetail>(`/api/agent/threads/${encodeURIComponent(id)}`),
 
   me: () => getJSON<SessionUser>("/api/auth/me"),
 };

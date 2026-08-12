@@ -1,17 +1,31 @@
 "use client";
 
 /**
- * Agent — conversation surface. Ported 1:1 from
- * frontend/screens/agent.jsx. Runs in two modes: 'full' (the /agent
- * route) and 'drawer' (overlaid on any other surface via ⌘J).
+ * Agent — the durable record of what the agent has done for this tenant.
+ *
+ * This replaces a screen that was entirely fabricated: `send()` was a 900ms
+ * `setTimeout` returning a fixed reply, and the thread sidebar was five
+ * hardcoded titles. The canned reply cited "CV42 Tunnel" alongside "CV33
+ * Crusher Out" and "OUT-1L on CV09 ROM" — cv42 is CEMEX, cv33 and cv09 are the
+ * demo tenant. It mixed two customers' channels into one answer, which to a
+ * customer is indistinguishable from a data leak.
+ *
+ * Everything here now comes from `/api/agent/threads`, which is tenant-scoped
+ * server-side from the session. Runs are created by "Run Diagnostic Agent" on
+ * the Outliers screen; that screen is deliberately untouched.
+ *
+ * Two modes: 'full' (the /agent route, with the thread list) and 'drawer'
+ * (overlaid via ⌘J, most recent thread only).
  */
-import { useState } from "react";
-import { Button, Icon, Pill, SevGlyph } from "../ui";
+import { useCallback, useEffect, useState } from "react";
+import { Button, Icon, Pill, Unavailable } from "../ui";
+import { api } from "../../lib/api";
 import { fmtAge } from "../../lib/format";
 import type {
-  AgentRef,
-  AgentReply,
-  AgentTurnMsg,
+  AgentArtifact,
+  AgentMessage,
+  AgentThreadDetail,
+  AgentThreadSummary,
   Channel,
   Outlier,
 } from "../../lib/types";
@@ -23,7 +37,6 @@ export type AgentScope = { name?: string } | string | null | undefined;
 export interface AgentScreenProps {
   channels: Channel[];
   outliers: Outlier[];
-  initialThread: AgentTurnMsg[];
   scope?: AgentScope;
   mode?: "full" | "drawer";
   onClose?: () => void;
@@ -34,51 +47,55 @@ export interface AgentScreenProps {
 export function AgentScreen({
   channels: CHANNELS,
   outliers: OUTLIERS,
-  initialThread,
   scope,
   mode = "full",
   onClose,
   onOpenOutlier,
   onOpenChannel,
 }: AgentScreenProps) {
-  const [thread, setThread] = useState<AgentTurnMsg[]>(initialThread);
-  const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
-
-  function send() {
-    if (!input.trim()) return;
-    const userMsg: AgentTurnMsg = { role: "user", t: Date.now(), content: input.trim() };
-    setThread((t) => [...t, userMsg]);
-    setInput("");
-    setStreaming(true);
-    setTimeout(() => {
-      const reply: AgentReply = {
-        role: "agent",
-        t: Date.now(),
-        answer: [
-          "Looking at the last 24h on the channels you have visible, throughput is tracking 3.1% above the 7-day mean. The two channels carrying the load are CV42 Tunnel and CV33 Crusher Out.",
-          "There is one critical outlier still open — OUT-1L on CV09 ROM, Topsize excursion at 02:47. The agent already flagged this for the grizzly screen check at next downtime.",
-        ],
-        refs: [
-          { kind: "outlier", id: "OUT-1L" },
-          { kind: "channel", id: "cv42" },
-          { kind: "channel", id: "cv33" },
-        ],
-        evidence: [
-          { tool: "pulse.snapshot", args: "window=24h", returned: "12 channels, 38 outliers" },
-          { tool: "throughput.compare", args: "window=24h baseline=7d", delta: "+3.1%" },
-        ],
-        followups: [
-          "Drill into CV09 ROM's open critical.",
-          "Compare this shift to the same shift last week.",
-        ],
-      };
-      setThread((t) => [...t, reply]);
-      setStreaming(false);
-    }, 900);
-  }
-
   const isDrawer = mode === "drawer";
+
+  const [threads, setThreads] = useState<AgentThreadSummary[] | null>(null);
+  const [threadsError, setThreadsError] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<AgentThreadDetail | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  const loadThreads = useCallback(() => {
+    setThreadsError(null);
+    api
+      .agentThreads()
+      .then((rows) => {
+        setThreads(rows);
+        // Open the most recent by default so the screen is never blank when
+        // there is something to show.
+        setActiveId((current) => current ?? rows[0]?.id ?? null);
+      })
+      .catch((err) => setThreadsError(err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  useEffect(loadThreads, [loadThreads]);
+
+  useEffect(() => {
+    if (!activeId) {
+      setDetail(null);
+      return;
+    }
+    let cancelled = false;
+    setDetailError(null);
+    api
+      .agentThread(activeId)
+      .then((d) => {
+        if (!cancelled) setDetail(d);
+      })
+      .catch((err) => {
+        if (!cancelled) setDetailError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId]);
+
   const scopeLabel =
     scope && typeof scope === "object" && "name" in scope
       ? scope.name
@@ -90,469 +107,416 @@ export function AgentScreen({
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: !isDrawer ? "240px 1fr" : "1fr",
-        height: "100%", overflow: "hidden",
+        gridTemplateColumns: !isDrawer ? "260px 1fr" : "1fr",
+        height: "100%",
+        overflow: "hidden",
       }}
     >
-      {/* Thread history (full-page only) */}
       {!isDrawer && (
-        <aside
-          style={{
-            borderRight: "1px solid var(--border)",
-            background: "var(--surface-1)",
-            overflow: "auto",
-            padding: "14px 12px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginBottom: 10,
-            }}
-          >
-            <h3
-              style={{
-                fontSize: 11, color: "var(--text-3)",
-                textTransform: "uppercase", letterSpacing: "0.08em",
-                fontWeight: 600, margin: 0,
-              }}
-            >
-              Threads
-            </h3>
-            <Button size="sm" variant="ghost" leftIcon="plus">New</Button>
-          </div>
-          <ThreadGroup
-            label="Today"
-            items={[
-              { t: "02 min ago", title: "Shift throughput vs last week", pinned: true },
-              { t: "32 min ago", title: "Why did CV42 spike at 02:47?", current: true },
-              { t: "04:18", title: "CV09 grizzly recurrence" },
-            ]}
-          />
-          <ThreadGroup
-            label="Yesterday"
-            items={[
-              { t: "21:14", title: "Color shift on CV33 — material change?" },
-              { t: "14:02", title: "Sieve drift trend on CV66" },
-            ]}
-          />
-          <ThreadGroup
-            label="This week"
-            items={[
-              { t: "2d", title: "CV28 SAG service window prep" },
-              { t: "3d", title: "Reclaim feed pulse signature" },
-              { t: "4d", title: "Sensor flutter false-positives" },
-            ]}
-          />
-        </aside>
+        <ThreadList
+          threads={threads}
+          error={threadsError}
+          activeId={activeId}
+          onSelect={setActiveId}
+          onRetry={loadThreads}
+        />
       )}
 
-      {/* Conversation */}
-      <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Header (drawer-only) */}
-        {isDrawer && (
-          <header
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 16px", borderBottom: "1px solid var(--border)",
-              background: "rgba(0,0,0,0.18)",
-            }}
-          >
-            <Icon name="sparkle" size={16} />
-            <h2 style={{ margin: 0, fontSize: 13.5, fontWeight: 600 }}>Agent</h2>
-            {scopeLabel && (
-              <Pill
-                size="sm"
-                mono
-                color="var(--accent-bright)"
-                bg="var(--accent-dim)"
-                border="var(--accent-line)"
-              >
-                scoped: {scopeLabel}
-              </Pill>
-            )}
-            <span style={{ flex: 1 }} />
-            <span className="kbd">⌘</span>
-            <span className="kbd">J</span>
-            <Button size="sm" variant="ghost" onClick={onClose}>
-              <Icon name="x" size={14} />
-            </Button>
-          </header>
-        )}
+      <section style={{ display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+        <Header
+          title={detail?.title ?? "Agent"}
+          scopeLabel={scopeLabel}
+          detail={detail}
+          isDrawer={isDrawer}
+          onClose={onClose}
+        />
 
-        {/* Scrolling thread */}
-        <div
-          style={{
-            flex: 1, overflow: "auto",
-            padding: isDrawer ? "20px 20px 0" : "32px 32px 0",
-          }}
-        >
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            {thread.map((m, i) => (
-              <Turn
-                key={i}
-                m={m}
-                onOpenRef={(r) => {
-                  if (r.kind === "outlier") {
-                    const o = OUTLIERS.find((x) => x.id === r.id);
-                    if (o && onOpenOutlier) onOpenOutlier(o);
-                  } else if (r.kind === "channel") {
-                    const c = CHANNELS.find((x) => x.id === r.id);
-                    if (c && onOpenChannel) onOpenChannel(c);
-                  }
-                }}
-              />
-            ))}
-            {streaming && <StreamingIndicator />}
-            <div style={{ height: 20 }} />
-          </div>
+        <div style={{ flex: 1, overflow: "auto", padding: isDrawer ? "14px 16px" : "18px 24px" }}>
+          {detailError ? (
+            <Unavailable label="Couldn't load this conversation." reason={detailError} />
+          ) : threads === null ? (
+            <p className="muted" style={{ fontSize: 12.5 }}>Loading…</p>
+          ) : threads.length === 0 ? (
+            <EmptyState />
+          ) : detail === null ? (
+            <p className="muted" style={{ fontSize: 12.5 }}>Loading conversation…</p>
+          ) : (
+            <div style={{ display: "grid", gap: 16, maxWidth: 860 }}>
+              {detail.messages.map((m) => (
+                <MessageBlock
+                  key={m.id}
+                  message={m}
+                  outlierId={detail.outlierId}
+                  channels={CHANNELS}
+                  outliers={OUTLIERS}
+                  onOpenOutlier={onOpenOutlier}
+                  onOpenChannel={onOpenChannel}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Composer */}
-        <div
-          style={{
-            padding: "12px 20px 20px",
-            borderTop: "1px solid var(--border)",
-            background: "var(--surface-1)",
-          }}
-        >
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-              <Pill
-                size="sm"
-                mono
-                color="var(--accent-bright)"
-                bg="var(--accent-dim)"
-                border="var(--accent-line)"
-              >
-                Scoped: {scopeLabel || "CV42 Tunnel · Last 24h"}
-              </Pill>
-              <Pill size="sm">
-                <Icon name="x" size={10} /> Remove scope
-              </Pill>
-              <span style={{ flex: 1 }} />
-              <Pill size="sm" mono>haiku-4-5</Pill>
-            </div>
-            <div
-              style={{
-                display: "flex", gap: 8, alignItems: "flex-end",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border-strong)",
-                borderRadius: "var(--r-md)", padding: 10,
-              }}
-            >
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                rows={2}
-                placeholder="Ask anything about your channels, outliers, or shift…"
-                style={{
-                  flex: 1, background: "transparent",
-                  border: 0, outline: 0,
-                  color: "var(--text-1)", resize: "none",
-                  fontSize: 13.5, lineHeight: 1.5,
-                  fontFamily: "var(--font-sans)",
-                }}
-              />
-              <Button
-                variant="primary"
-                size="md"
-                rightIcon="send"
-                onClick={send}
-                disabled={!input.trim() || streaming}
-              >
-                Send
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+        <Composer />
+      </section>
     </div>
   );
 }
 
-interface ThreadItem {
-  t: string;
-  title: string;
-  pinned?: boolean;
-  current?: boolean;
-}
-function ThreadGroup({ label, items }: { label: string; items: ThreadItem[] }) {
+/* ── thread list ──────────────────────────────────────────────────── */
+
+function ThreadList({
+  threads, error, activeId, onSelect, onRetry,
+}: {
+  threads: AgentThreadSummary[] | null;
+  error: string | null;
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onRetry: () => void;
+}) {
   return (
-    <div style={{ marginBottom: 12 }}>
+    <aside
+      style={{
+        borderRight: "1px solid var(--border)",
+        background: "var(--surface-1)",
+        overflow: "auto",
+        padding: "14px 12px",
+      }}
+    >
       <div
         style={{
-          fontSize: 10.5, color: "var(--text-3)",
-          textTransform: "uppercase", letterSpacing: "0.08em",
-          fontWeight: 600, padding: "4px 6px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 10,
         }}
       >
-        {label}
-      </div>
-      {items.map((it, i) => (
-        <div
-          key={i}
+        <h3
           style={{
-            display: "flex", alignItems: "flex-start", gap: 6,
-            padding: "8px 8px", borderRadius: "var(--r-sm)",
-            background: it.current ? "var(--accent-dim)" : "transparent",
-            color: it.current ? "var(--accent-bright)" : "var(--text-1)",
-            cursor: "pointer", fontSize: 12.5,
-          }}
-          onMouseEnter={(e) => {
-            if (!it.current) (e.currentTarget as HTMLDivElement).style.background = "var(--surface-2)";
-          }}
-          onMouseLeave={(e) => {
-            if (!it.current) (e.currentTarget as HTMLDivElement).style.background = "transparent";
+            fontSize: 11, color: "var(--text-3)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            fontWeight: 600, margin: 0,
           }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
+          Threads
+        </h3>
+        {threads !== null && (
+          <span className="mono" style={{ fontSize: 10.5, color: "var(--text-3)" }}>
+            {threads.length}
+          </span>
+        )}
+      </div>
+
+      {error ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <Unavailable compact label="Couldn't load threads." reason={error} />
+          <Button size="sm" variant="secondary" onClick={onRetry}>Retry</Button>
+        </div>
+      ) : threads === null ? (
+        <p className="muted" style={{ fontSize: 12 }}>Loading…</p>
+      ) : threads.length === 0 ? (
+        <p className="muted" style={{ fontSize: 12, lineHeight: 1.5 }}>
+          No conversations yet. Running the Diagnostic Agent on an outlier
+          starts one.
+        </p>
+      ) : (
+        <div style={{ display: "grid", gap: 2 }}>
+          {threads.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => onSelect(t.id)}
               style={{
-                textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap",
+                textAlign: "left",
+                padding: "8px 9px",
+                borderRadius: "var(--r-sm)",
+                border: "1px solid transparent",
+                background: t.id === activeId ? "var(--surface-2)" : "transparent",
+                borderColor: t.id === activeId ? "var(--border)" : "transparent",
+                cursor: "pointer",
+                display: "grid",
+                gap: 3,
               }}
             >
-              {it.title}
-            </div>
-            <div
-              className="mono"
-              style={{ fontSize: 10.5, color: "var(--text-4)", marginTop: 1 }}
-            >
-              {it.t}
-            </div>
-          </div>
-          {it.pinned && <Icon name="pin" size={11} />}
+              <span
+                style={{
+                  fontSize: 12.5,
+                  color: t.id === activeId ? "var(--text-1)" : "var(--text-2)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}
+              >
+                {t.title || "Untitled"}
+              </span>
+              <span className="mono" style={{ fontSize: 10, color: "var(--text-3)" }}>
+                {fmtAge(t.updatedAt)} ago · {t.messageCount} msg
+                {t.costUsd > 0 && ` · $${t.costUsd.toFixed(4)}`}
+              </span>
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </aside>
   );
 }
 
-function Turn({ m, onOpenRef }: { m: AgentTurnMsg; onOpenRef: (r: AgentRef) => void }) {
-  const [showEv, setShowEv] = useState(false);
-  if (m.role === "user") {
+/* ── header ───────────────────────────────────────────────────────── */
+
+function Header({
+  title, scopeLabel, detail, isDrawer, onClose,
+}: {
+  title: string;
+  scopeLabel: string | null | undefined;
+  detail: AgentThreadDetail | null;
+  isDrawer: boolean;
+  onClose?: () => void;
+}) {
+  return (
+    <header
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: isDrawer ? "12px 16px" : "14px 24px",
+        borderBottom: "1px solid var(--border)",
+        minHeight: 52,
+      }}
+    >
+      <Icon name="sparkle" size={14} />
+      <span
+        style={{
+          fontSize: 13.5, fontWeight: 600,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}
+      >
+        {title}
+      </span>
+      {scopeLabel && <Pill size="sm" mono>{scopeLabel}</Pill>}
+      <span style={{ flex: 1 }} />
+      {detail && (
+        <span className="mono" style={{ fontSize: 10.5, color: "var(--text-3)" }}>
+          ${detail.costUsd.toFixed(4)}
+        </span>
+      )}
+      {isDrawer && onClose && (
+        <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+      )}
+    </header>
+  );
+}
+
+/* ── messages ─────────────────────────────────────────────────────── */
+
+function MessageBlock({
+  message, outlierId, channels, outliers, onOpenOutlier, onOpenChannel,
+}: {
+  message: AgentMessage;
+  outlierId: string | null;
+  channels: Channel[];
+  outliers: Outlier[];
+  onOpenOutlier?: (o: Outlier) => void;
+  onOpenChannel?: (c: Channel) => void;
+}) {
+  if (message.role === "user") {
     return (
-      <div style={{ display: "flex", gap: 14, marginBottom: 24 }}>
-        <div
-          style={{
-            width: 2, background: "var(--text-4)", borderRadius: 2, flexShrink: 0,
-          }}
-        />
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontSize: 10.5, color: "var(--text-3)",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              fontWeight: 600, marginBottom: 4,
-            }}
-          >
-            You
-          </div>
-          <div
-            style={{
-              fontSize: 14, color: "var(--text-1)", lineHeight: 1.55,
-              textWrap: "pretty",
-            }}
-          >
-            {m.content}
-          </div>
-        </div>
+      <div
+        style={{
+          justifySelf: "end", maxWidth: "80%",
+          background: "var(--surface-2)", border: "1px solid var(--border)",
+          borderRadius: "var(--r-md)", padding: "10px 13px",
+          fontSize: 12.5, color: "var(--text-1)", lineHeight: 1.5,
+        }}
+      >
+        {message.content}
       </div>
     );
   }
-  // agent reply
+
+  const outlier = outlierId ? outliers.find((o) => o.id === outlierId) : undefined;
+  const channel = outlier ? channels.find((c) => c.id === outlier.channelId) : undefined;
+
   return (
-    <div style={{ display: "flex", gap: 14, marginBottom: 32 }}>
-      <div style={{ width: 2, background: "var(--accent)", borderRadius: 2, flexShrink: 0 }} />
-      <div style={{ flex: 1 }}>
-        <div
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            fontSize: 10.5, color: "var(--text-3)",
-            textTransform: "uppercase", letterSpacing: "0.08em",
-            fontWeight: 600, marginBottom: 6,
-          }}
-        >
-          <Icon name="sparkle" size={12} />
-          Agent
-          <span
-            className="mono"
-            style={{
-              textTransform: "none", letterSpacing: 0, color: "var(--text-4)",
-            }}
-          >
-            · {fmtAge(m.t)} ago · {m.evidence?.length || 0} tool calls
+    <div style={{ display: "grid", gap: 10 }}>
+      <p style={{ fontSize: 13, color: "var(--text-1)", lineHeight: 1.6, margin: 0 }}>
+        {message.content}
+      </p>
+
+      {message.artifact && <ArtifactCard artifact={message.artifact} />}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {outlier && onOpenOutlier && (
+          <Button size="sm" variant="secondary" onClick={() => onOpenOutlier(outlier)}>
+            Open outlier
+          </Button>
+        )}
+        {channel && onOpenChannel && (
+          <Button size="sm" variant="ghost" onClick={() => onOpenChannel(channel)}>
+            Open {channel.name}
+          </Button>
+        )}
+        {message.model && (
+          <span className="mono" style={{ fontSize: 10.5, color: "var(--text-3)" }}>
+            {message.model} · ${message.costUsd.toFixed(4)} · {fmtAge(message.createdAt)} ago
           </span>
-        </div>
-        {/* Answer */}
-        <div
-          style={{
-            fontSize: 14, color: "var(--text-1)", lineHeight: 1.65,
-            textWrap: "pretty",
-          }}
-        >
-          {m.answer.map((p, i) => (
-            <p key={i} style={{ margin: "0 0 10px" }}>{p}</p>
-          ))}
-          {m.refs && m.refs.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-              {m.refs.map((r, i) => (
-                <button
-                  key={i}
-                  onClick={() => onOpenRef(r)}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 5,
-                    padding: "3px 8px", fontSize: 11.5, fontWeight: 500,
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border-strong)",
-                    color: "var(--text-1)", borderRadius: "var(--r-pill)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "var(--accent-dim)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "var(--surface-2)")}
-                >
-                  {r.kind === "outlier" ? (
-                    <SevGlyph sev="critical" size={7} />
-                  ) : (
-                    <span style={{ width: 7, height: 7, background: "var(--accent)", borderRadius: 2 }} />
-                  )}
-                  {r.id}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Evidence — collapsible */}
-        <div style={{ marginTop: 14 }}>
-          <button
-            onClick={() => setShowEv((v) => !v)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              fontSize: 11, fontWeight: 600,
-              color: "var(--text-3)",
-              textTransform: "uppercase", letterSpacing: "0.08em",
-              padding: "4px 0",
-            }}
-          >
-            <Icon name="chevron" size={11} />
-            <span
-              style={{
-                transform: showEv ? "rotate(90deg)" : "rotate(0deg)",
-                display: "inline-flex",
-                transition: "transform var(--t-fast)",
-              }}
-            >
-              <Icon name="chevron" size={11} />
-            </span>
-            Evidence · {m.evidence.length} tool calls
-          </button>
-          {showEv && (
-            <div
-              style={{
-                marginTop: 6, padding: "10px 12px",
-                background: "var(--surface-inset)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--r-sm)",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11.5, lineHeight: 1.7,
-              }}
-            >
-              {m.evidence.map((e, i) => (
-                <div key={i} style={{ marginBottom: 4 }}>
-                  <span style={{ color: "var(--accent-bright)" }}>{e.tool}</span>
-                  <span style={{ color: "var(--text-3)" }}>(</span>
-                  <span style={{ color: "var(--text-2)" }}>{e.args}</span>
-                  <span style={{ color: "var(--text-3)" }}>)</span>
-                  <span style={{ color: "var(--text-4)" }}>  → </span>
-                  <span style={{ color: "var(--text-2)" }}>
-                    {Object.entries(e)
-                      .filter(([k]) => !["tool", "args"].includes(k))
-                      .map(([k, v], j) => (
-                        <span key={j}>
-                          {k}: {String(v)}
-                        </span>
-                      ))}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Follow-ups */}
-        {m.followups && m.followups.length > 0 && (
-          <div style={{ marginTop: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {m.followups.map((f, i) => (
-              <button
-                key={i}
-                style={{
-                  padding: "6px 10px", fontSize: 12,
-                  color: "var(--text-2)",
-                  background: "var(--surface-2)",
-                  border: "1px solid var(--border-strong)",
-                  borderRadius: "var(--r-pill)",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.background = "var(--accent-dim)";
-                  el.style.color = "var(--accent-bright)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.background = "var(--surface-2)";
-                  el.style.color = "var(--text-2)";
-                }}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
         )}
       </div>
     </div>
   );
 }
 
-function StreamingIndicator() {
+/* ── the auditable artifact ───────────────────────────────────────── */
+
+function ArtifactCard({ artifact }: { artifact: AgentArtifact }) {
   return (
-    <div style={{ display: "flex", gap: 14, marginBottom: 24 }}>
-      <div style={{ width: 2, background: "var(--accent)", borderRadius: 2 }} />
+    <div
+      style={{
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-md)",
+        background: "var(--surface-1)",
+        overflow: "hidden",
+      }}
+    >
       <div
         style={{
+          padding: "8px 12px",
+          borderBottom: "1px solid var(--border)",
           display: "flex", alignItems: "center", gap: 8,
-          color: "var(--text-3)", fontSize: 12,
         }}
       >
-        <span style={{ display: "inline-flex", gap: 3 }}>
-          <span
-            style={{
-              width: 4, height: 4, background: "var(--accent)", borderRadius: "50%",
-              animation: "reliat-pulse 1.2s ease-in-out infinite",
-            }}
-          />
-          <span
-            style={{
-              width: 4, height: 4, background: "var(--accent)", borderRadius: "50%",
-              animation: "reliat-pulse 1.2s ease-in-out 0.2s infinite",
-            }}
-          />
-          <span
-            style={{
-              width: 4, height: 4, background: "var(--accent)", borderRadius: "50%",
-              animation: "reliat-pulse 1.2s ease-in-out 0.4s infinite",
-            }}
-          />
+        <span
+          style={{
+            fontSize: 10.5, color: "var(--text-3)",
+            textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600,
+          }}
+        >
+          Auditable artifact
         </span>
-        Reasoning…
-        <style>{`@keyframes reliat-pulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}`}</style>
+        <span className="mono" style={{ fontSize: 10, color: "var(--text-3)" }}>
+          {artifact.id}
+        </span>
+      </div>
+
+      <div style={{ padding: 12, display: "grid", gap: 12 }}>
+        <Field label="Evidence used">{artifact.evidenceSummary}</Field>
+
+        <div>
+          <FieldLabel>
+            Ranked hypotheses
+            {/* These percentages are the model's own stated confidence, taken
+                straight from the tool call. Nothing calibrates or normalises
+                them — they routinely do not sum to 100. Saying so here is the
+                difference between a number and a claim. */}
+            <span
+              className="muted"
+              style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400, marginLeft: 6 }}
+            >
+              model-stated, not calibrated
+            </span>
+          </FieldLabel>
+          <div style={{ display: "grid", gap: 6 }}>
+            {artifact.hypotheses.map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-sm)",
+                  padding: "8px 10px",
+                  fontSize: 12,
+                  color: "var(--text-2)",
+                  lineHeight: 1.5,
+                }}
+              >
+                <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                  <span style={{ color: "var(--text-1)", fontWeight: 500, flex: 1 }}>
+                    {h.cause}
+                  </span>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    {Math.round(h.confidence * 100)}%
+                  </span>
+                </div>
+                {h.failureCategory && (
+                  <div style={{ marginTop: 4 }}>
+                    <Pill size="sm" mono>{h.failureCategory}</Pill>
+                  </div>
+                )}
+                {h.supportingEvidence && (
+                  <div style={{ marginTop: 4, color: "var(--text-3)" }}>
+                    Supporting: {h.supportingEvidence}
+                  </div>
+                )}
+                {h.contradictingEvidence && (
+                  <div style={{ marginTop: 2, color: "var(--text-3)" }}>
+                    Contradicting: {h.contradictingEvidence}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {artifact.recommendedAction && (
+          <Field label="Recommended action">{artifact.recommendedAction}</Field>
+        )}
+
+        <div className="mono" style={{ fontSize: 10.5, color: "var(--text-3)" }}>
+          {artifact.model} · {artifact.inputTokens + artifact.outputTokens} tokens ·
+          {" "}${artifact.costUsd.toFixed(4)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 10.5, color: "var(--text-3)",
+        textTransform: "uppercase", letterSpacing: "0.08em",
+        fontWeight: 600, marginBottom: 5,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div style={{ fontSize: 12.5, color: "var(--text-2)", lineHeight: 1.55 }}>{children}</div>
+    </div>
+  );
+}
+
+/* ── empty + composer ─────────────────────────────────────────────── */
+
+function EmptyState() {
+  return (
+    <Unavailable
+      label="No agent conversations yet."
+      reason="Open an outlier and press Run Diagnostic Agent. Each run is recorded here permanently, with the evidence it used and what it cost."
+    />
+  );
+}
+
+function Composer() {
+  // Deliberately inert. A conversational turn needs a harness path that does
+  // not exist yet — different tool set from `submit_diagnosis`, multi-turn
+  // context, its own token budget. The previous version of this screen faked
+  // it with a setTimeout and a hardcoded answer. An input that plainly says it
+  // is not wired is better than one that invents a reply.
+  return (
+    <div style={{ borderTop: "1px solid var(--border)", padding: "10px 16px" }}>
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: 10,
+          border: "1px dashed var(--border)",
+          borderRadius: "var(--r-md)",
+          padding: "10px 12px",
+          background: "var(--surface-1)",
+        }}
+      >
+        <Icon name="sparkle" size={13} />
+        <span style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.5 }}>
+          Free-form questions aren&apos;t wired up yet. Diagnostic runs started from
+          the Outliers screen appear here as soon as they finish.
+        </span>
       </div>
     </div>
   );

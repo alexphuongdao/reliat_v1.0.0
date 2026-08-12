@@ -19,7 +19,6 @@ export default function AgentPage() {
     <AgentScreen
       channels={data.channels}
       outliers={data.outliers}
-      initialThread={[]}
       mode="full"
       scope={asScopeArg(agentScope)}
       onOpenChannel={openChannel}

@@ -17,7 +17,6 @@ import { AccountMenu } from "./AccountMenu";
 import { api } from "../../lib/api";
 import type { SessionUser } from "../../lib/session.types";
 import type {
-  AgentTurnMsg,
   Channel,
   Command,
   Outlier,
@@ -54,7 +53,6 @@ export function AppShell({ children, commands, user }: AppShellProps) {
   // honest answer for a customer with one channel or none.
   const [channels, setChannels] = useState<Channel[]>([]);
   const [outliers, setOutliers] = useState<Outlier[]>([]);
-  const agentThread: AgentTurnMsg[] = useMemo(() => [], []);
 
   useEffect(() => {
     let cancelled = false;
@@ -469,7 +467,6 @@ export function AppShell({ children, commands, user }: AppShellProps) {
           <AgentScreen
             channels={channels}
             outliers={outliers}
-            initialThread={agentThread}
             mode="drawer"
             scope={asScreenScope(agentScope)}
             onClose={() => setAgentOpen(false)}

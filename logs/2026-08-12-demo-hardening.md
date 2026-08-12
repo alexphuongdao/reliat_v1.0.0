@@ -13,6 +13,7 @@ traceable; this file is updated per commit.
 | `v1.0.5` | Real status chrome, per-tenant chart precision, row overlap | 31 pass / 3 xfail |
 | `v1.0.6` | Stored diagnoses load on expand instead of being re-bought | 31 pass / 3 xfail |
 | `v1.0.7` | Agent runs become durable threads (schema + API) | 31 pass / 3 xfail |
+| `v1.0.8` | Agent tab rebuilt on real data; canned reply deleted | 31 pass / 3 xfail |
 
 ---
 
@@ -169,7 +170,86 @@ argument for enumerating routes rather than listing them.
 
 ---
 
-## Where this leaves the demo
+## v1.0.8 — the Agent tab, rebuilt on real data
+
+The unfinished half of v1.0.7. All 559 lines of `AgentScreen.tsx` replaced.
+
+### What was deleted
+
+- **`send()` — a 900ms `setTimeout` returning a fixed reply.** It cited
+  `CV42 Tunnel` alongside `CV33 Crusher Out` and `OUT-1L on CV09 ROM`. `cv42` is
+  CEMEX; `cv33` and `cv09` are the demo tenant. The fake answer mixed two
+  customers' channels into one response — to a customer, indistinguishable from
+  a data leak. This was the highest-priority item in the repo.
+- **Five hardcoded thread titles** in the sidebar ("Why did CV42 spike at
+  02:47?", "CV09 grizzly recurrence", …), grouped under fake "Today" /
+  "Yesterday" / "This week" headings.
+- **Fabricated `evidence`, `refs` and `followups`** on every reply.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `apps/web/components/screens/AgentScreen.tsx` | Rewritten. Thread list, transcript and artifact rendering, all from `/api/agent/threads`. |
+| `apps/web/lib/types.ts` | `AgentThreadSummary`, `AgentThreadDetail`, `AgentMessage`, `AgentArtifact`. |
+| `apps/web/lib/api.ts` | `agentThreads()`, `agentThread(id)`. |
+| `apps/web/app/(app)/agent/page.tsx`, `components/shell/AppShell.tsx` | `initialThread` prop dropped — the screen loads its own data. |
+
+### Decisions worth remembering
+
+**The composer is deliberately inert.** A conversational turn needs a harness
+path that does not exist: a different tool set from `submit_diagnosis`,
+multi-turn context, its own token budget. The old screen faked exactly this with
+a `setTimeout`. The input now says plainly that free-form questions are not
+wired up and that diagnostic runs appear here when they finish. An input that
+admits it is not connected beats one that invents an answer.
+
+**The hypothesis percentages are labelled `model-stated, not calibrated`.**
+They come straight from the tool call and nothing normalises them — the run
+rendered here reads 55 / 25 / 15 / 5, and an earlier one summed to 102%.
+Showing the number without that qualifier is the same overclaim as the old "AI
+explanation" heading, one level down.
+
+**The artifact renders where the work is, not as a copy.** The card shows
+evidence used, ranked hypotheses with their failure category and supporting /
+contradicting evidence, recommended action, and model / tokens / cost — all read
+through `diagnosis_id` from `outlier_diagnoses`. The Agent tab and the Outliers
+tab display the same row, so they cannot disagree.
+
+**Interaction is navigation, for now.** "Open outlier" and "Open <channel>"
+route into the existing screens rather than reimplementing them in the
+transcript. That is what "interactable" can honestly mean before there is a
+conversational endpoint.
+
+### Verified
+
+In-browser as CEMEX, at 1508×815:
+
+| Check | Result |
+|---|---|
+| Thread sidebar | `CV42 Tunnel · Topsize excursion` — `8m ago · 2 msg · $0.0093` |
+| User turn | "Diagnose OUT-F0A184698970 — Topsize excursion on CV42 Tunnel, Topsize 2.78mm at 2.1σ." |
+| Assistant turn | Root cause citing Topsize 2.781 mm vs baseline 0.666 mm, F80 1.186 mm, RGB stable |
+| Artifact header | `AUDITABLE ARTIFACT  DIAG-6ed3e15b5661` |
+| Ranked hypotheses | 4, with categories `upstream_blast` / `process_control` / `instrument` / `equipment`, each with supporting **and** contradicting evidence |
+| Footer | `claude-haiku-4-5-20251001 · 4367 tokens · $0.0093` |
+| "Open outlier" | Navigates to `/outliers?o=OUT-F0A184698970`, row expanded, **same artifact** |
+| Outliers screen behaviour | Unchanged |
+| Backend suite / `tsc --noEmit` | 31 passed, 3 xfailed / clean |
+
+### Still open
+
+- **No conversational turn.** Listing and reopening works; typing does not.
+  This is the next harness milestone.
+- **`kind="ask"` threads are still never created** — nothing writes them until
+  the above exists.
+- **The drawer (⌘J) shows the same thread list logic without the sidebar.** It
+  opens the most recent thread; it does not yet scope to the outlier you opened
+  it from.
+- **No pagination, no archive, no delete.** `GET /threads` caps at 500.
+- **Threads are not created for failed runs** in a way that surfaces well — a
+  failed diagnosis records an assistant turn with the error text and no
+  artifact, which is correct but untested in the UI.
 
 Every item the audit called a blocker is fixed and verified in-browser on both
 tenants. What is *not* fixed, in the order it would bite:

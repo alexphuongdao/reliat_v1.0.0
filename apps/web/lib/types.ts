@@ -115,3 +115,56 @@ export interface Command {
   channelId?: string;
   outlierId?: string;
 }
+
+/* ── Agent conversations ──────────────────────────────────────────────
+   Mirrors services/api/app/routes/agent.py. A thread is one durable
+   conversation; an assistant message that produced an auditable artifact
+   carries it inline. */
+
+export interface AgentArtifactHypothesis {
+  cause: string;
+  failureCategory: string | null;
+  confidence: number;
+  supportingEvidence: string;
+  contradictingEvidence: string | null;
+}
+
+export interface AgentArtifact {
+  id: string;
+  status: string;
+  model: string;
+  rootCause: string;
+  hypotheses: AgentArtifactHypothesis[];
+  confidence: number;
+  recommendedAction: string;
+  evidenceSummary: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+export interface AgentMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  createdAt: number;
+  model: string | null;
+  costUsd: number;
+  artifact: AgentArtifact | null;
+}
+
+export interface AgentThreadSummary {
+  id: string;
+  kind: string;
+  title: string;
+  channelId: string | null;
+  outlierId: string | null;
+  createdAt: number;
+  updatedAt: number;
+  messageCount: number;
+  costUsd: number;
+}
+
+export interface AgentThreadDetail extends AgentThreadSummary {
+  messages: AgentMessage[];
+}
