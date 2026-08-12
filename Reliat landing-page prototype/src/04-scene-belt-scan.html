@@ -1,5 +1,13 @@
         <!-- SCENE 1 · BELT + SCAN -->
         <section data-scene="1" data-screen-label="Belt & scan" style="flex:0 0 100vw;height:100vh;position:relative">
+          <video data-belt-video muted playsinline preload="auto" aria-label="Crushed basalt moving left to right on a mining conveyor">
+            <source src="./assets/video/mine-conveyor-loop.mp4" type="video/mp4">
+          </video>
+          <video data-belt-video-next muted playsinline preload="auto" aria-hidden="true" tabindex="-1">
+            <source src="./assets/video/mine-conveyor-loop.mp4" type="video/mp4">
+          </video>
+          <div data-belt-grade aria-hidden="true"></div>
+          <div data-belt-scan-mobile aria-hidden="true"><i></i></div>
           <div data-copy="belt" style="position:absolute;left:8vw;top:14vh;max-width:560px">
             <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.24em;color:#218157;margin-bottom:14px">PHASE 01 · DETECTION</div>
             <h2 style="font-size:clamp(30px,4vw,60px);line-height:1.02;font-weight:700;letter-spacing:-.015em;margin:0 0 18px">Every particle,<br>measured on the belt.</h2>

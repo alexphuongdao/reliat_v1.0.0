@@ -1,0 +1,8 @@
+# Generated deployment bundle. Recreate with: python3 build.py
+dist/
+
+# Large AI-video working files stay local. Keep the workflow notes tracked.
+production/hero-mine/raw/*
+!production/hero-mine/raw/README.md
+production/hero-mine/selects/*
+!production/hero-mine/selects/README.md
