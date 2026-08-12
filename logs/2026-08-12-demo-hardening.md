@@ -12,6 +12,7 @@ traceable; this file is updated per commit.
 | `v1.0.4` | Detector stops asserting root causes it never inferred | 31 pass / 3 xfail |
 | `v1.0.5` | Real status chrome, per-tenant chart precision, row overlap | 31 pass / 3 xfail |
 | `v1.0.6` | Stored diagnoses load on expand instead of being re-bought | 31 pass / 3 xfail |
+| `v1.0.7` | Agent runs become durable threads (schema + API) | 31 pass / 3 xfail |
 
 ---
 
@@ -54,6 +55,117 @@ symptom other than a bill.
 | Backend suite | 31 passed, 3 xfailed |
 
 Both branches of the v1.0.4 heading logic are now exercised on real data.
+
+---
+
+## v1.0.7 — agent runs become durable threads
+
+### Where the AI code actually lives
+
+Recorded here because it took a pass through the repo to establish, and the
+next session should not have to repeat it.
+
+| File | Lines | What it is |
+|---|---|---|
+| `services/api/app/harness.py` | 373 | **The harness.** `TenantHarness` → `system_prompt()`, `diagnosis_tool()`, `format_window()`. The thing that grows per tenant. |
+| `services/api/app/diagnostic_agent.py` | 238 | One forced-tool Anthropic call. No orchestration framework. |
+| `services/api/app/routes/outliers.py` | 187 | `POST /{id}/diagnose`, `GET /{id}/diagnoses` |
+| `services/api/app/models.py` | — | `OutlierDiagnosis` — was the only persisted AI artifact |
+| `apps/web/components/screens/AgentScreen.tsx` | 559 | **Entirely fake.** Contains no API call. |
+
+### How the hypothesis percentages work
+
+They come **straight from the model**. `harness.py:197` declares per hypothesis:
+
+```python
+"confidence": {"type": "number", "minimum": 0, "maximum": 1}
+```
+
+The model fills that number in. Nothing computes, normalises or calibrates it,
+which is why an observed run read 62 + 25 + 15 = **102%**. They are four
+independent self-reports, not a probability distribution.
+
+What *is* enforced: `failure_category` must be in the tenant's enum and is
+dropped to `None` otherwise (`diagnostic_agent.py:207`); 1–4 hypotheses; forced
+`tool_choice` so the model cannot answer in prose; all statistics computed in
+Python and passed in as evidence. **The reasoning is grounded; the percentages
+are not.** Calibrating them needs outcome labels, which do not exist yet.
+
+### The two interaction paths, before this change
+
+- **"Run Diagnostic Agent"** — real. `POST /api/outliers/{id}/diagnose` →
+  harness → Anthropic → `outlier_diagnoses`.
+- **"Ask Agent"** — a `setTimeout`. `AgentScreen.tsx:52-76` returns a canned
+  reply after 900ms. It cites `CV42 Tunnel` **and** `CV33 Crusher Out` **and**
+  `OUT-1L on CV09 ROM` — `cv42` is CEMEX, `cv33`/`cv09` are the demo tenant.
+  The fake reply mixes two customers' channels into one answer. Shown to CEMEX
+  it reads exactly like a data leak.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `services/api/app/models.py` | New `AgentThread`, `AgentMessage`. |
+| `alembic/versions/b1273c009c8e_*.py` | Two `CREATE TABLE`s. Purely additive. |
+| `services/api/app/agent_threads.py` | New. Records a run as conversation. Calls no model. |
+| `services/api/app/routes/agent.py` | New. `GET /api/agent/threads`, `GET /api/agent/threads/{id}`. |
+| `services/api/app/routes/outliers.py` | `diagnose` also records the run. Response shape unchanged. |
+| `services/api/tests/test_cross_tenant_leak.py` | Seeds a thread per tenant; new markers. |
+
+### Decisions worth remembering
+
+**`agent_threads.tenant_id` is its own column.** Every other table reaches the
+tenant through a channel. A thread does not have to be about a channel — an
+operator can ask a question scoped to nothing — so there is no join to lean on
+here. That makes it the easiest table in the schema to leak from, which is
+exactly why the leak test now seeds it.
+
+**The message points at the diagnosis; it does not copy it.**
+`agent_messages.diagnosis_id` references `outlier_diagnoses`. Copying
+`root_cause` and `hypotheses` into the transcript would let the artifact and the
+record of it drift, and the artifact is the thing that has to be auditable.
+
+**One thread per outlier, not per run.** Re-running is a further turn in the
+same conversation. That is what makes the history worth reading — you can see it
+was asked three times and what changed between answers.
+
+**The Outliers screen was not touched.** `POST /diagnose` returns the same shape
+it always did; the recording is a side effect. The requirement was that the
+Outliers tab stays untouched, so the new surface had to be additive at the API
+level too.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| `measurements` before / after migration | **36,978 / 36,978** |
+| CEMEX threads before any run | `[]` |
+| After `POST /diagnose` on `OUT-F0A184698970` | `TH-2a070c7ae201` — "CV42 Tunnel · Topsize excursion", 2 messages, $0.0093 |
+| Thread detail | `[user]` "Diagnose OUT-… Topsize 2.78mm at 2.1σ" → `[assistant]` + artifact `DIAG-6ed3e15b5661`, 4 hypotheses, conf 0.68 |
+| demo tenant `GET /api/agent/threads` | `[]` |
+| demo tenant requesting the CEMEX thread | **404** |
+| Sabotage tenant filter on `GET /api/agent/threads` | **FAIL** — `leaked 'chan-bravo' from tenant BRAVO (status 200)` |
+| Restore + full suite | 31 passed, 3 xfailed |
+
+The leak test flagged `GET /api/agent/threads/{thread_id}` the moment the router
+was registered, before I had written a single test for it. That is the whole
+argument for enumerating routes rather than listing them.
+
+### Still open — this is the unfinished half
+
+- **`AgentScreen.tsx` still renders the fake `setTimeout`**, including the
+  cross-tenant canned reply described above. The backend is ready and verified;
+  the UI has not been touched. **Deleting that canned reply is the single most
+  important remaining item before any customer sees the Agent tab.**
+- **No conversational turn endpoint.** Listing and reopening threads needs only
+  the two GETs that now exist. A person *typing a question* needs a different
+  harness path from `submit_diagnosis` — tools over real data, multi-turn
+  context, its own budget. That is the next harness milestone, not a UI task.
+- **`kind="ask"` threads are defined but never created.** Nothing writes them
+  until the conversational path exists.
+- **No pagination.** `GET /threads` caps at 500. Fine now; not at 10k runs.
+- **Threads are never deleted or archived.** No retention story, which matters
+  for a contract-termination deletion request.
 
 ---
 
