@@ -38,6 +38,22 @@ export function PulseScreen({
   const critCount = OUTLIERS.filter((o) => o.sev === "critical" && o.status === "open").length;
   const warnCount = OUTLIERS.filter((o) => o.sev === "warn" && o.status === "open").length;
 
+  // The newest reading this tenant actually holds. This KPI used to read a
+  // hardcoded "00:11 ago" on every screen for every tenant, while CEMEX's
+  // newest row was 98 days old — the first number on the page, and false.
+  const lastIngestAt = Object.values(SERIES).reduce<number | null>((newest, points) => {
+    const last = points.length ? points[points.length - 1].t : null;
+    if (last == null) return newest;
+    const ms = new Date(last).getTime();
+    return newest == null || ms > newest ? ms : newest;
+  }, null);
+
+  // `shift` is a real column on the channel. How long a shift runs and when it
+  // ends is plant configuration we do not have, so the countdown that used to
+  // sit here ("4h 12m", "ends 14:00" — identical for every tenant) is gone
+  // rather than guessed.
+  const shift = CHANNELS.find((c) => c.shift)?.shift ?? null;
+
   return (
     <div style={{ padding: "20px 24px 32px", maxWidth: 1680, margin: "0 auto" }}>
 
@@ -62,7 +78,11 @@ export function PulseScreen({
           <KPI label="Warnings open" value={`${warnCount}`} />
         </div>
         <div style={{ borderLeft: "1px solid var(--border)" }}>
-          <KPI label="Last ingest" value="00:11" unit="ago" />
+          <KPI
+            label="Last ingest"
+            value={lastIngestAt == null ? "—" : fmtAge(lastIngestAt)}
+            unit={lastIngestAt == null ? "no readings" : "ago"}
+          />
         </div>
         <div
           style={{
@@ -81,12 +101,12 @@ export function PulseScreen({
             >
               Shift
             </div>
-            <div className="mono" style={{ fontSize: 22, fontWeight: 600 }}>A · 4h 12m</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 600 }}>{shift ?? "—"}</div>
           </div>
-          <div style={{ fontSize: 11, color: "var(--text-3)", textAlign: "right" }}>
-            ends
+          <div style={{ fontSize: 11, color: "var(--text-3)", textAlign: "right", maxWidth: 90 }}>
+            shift hours
             <br />
-            <span className="mono" style={{ color: "var(--text-2)", fontSize: 12 }}>14:00</span>
+            <span style={{ color: "var(--text-3)" }}>not configured</span>
           </div>
         </div>
       </div>
@@ -228,10 +248,34 @@ function OutlierRow({ o, channels, series, onOpen, onAsk, last }: OutlierRowProp
     >
       <SevGlyph sev={o.sev} size={10} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 600 }}>{o.channelName}</span>
-          <span className="mono muted" style={{ fontSize: 11 }}>{o.id}</span>
-          <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>· {o.type}</span>
+        {/* Every child here needs to be able to shrink. Without `minWidth: 0`
+            on the row and truncation on the two long spans, the id and the
+            classification overflowed this grid cell and rendered *on top of*
+            the value column below ~1500px — i.e. on a 13" laptop. */}
+        <div
+          style={{
+            display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3,
+            minWidth: 0, overflow: "hidden",
+          }}
+        >
+          <span style={{ fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>{o.channelName}</span>
+          <span
+            className="mono muted"
+            style={{
+              fontSize: 11, minWidth: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}
+          >
+            {o.id}
+          </span>
+          <span
+            style={{
+              fontSize: 11.5, color: "var(--text-3)", flexShrink: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}
+          >
+            · {o.type}
+          </span>
         </div>
         <div
           style={{

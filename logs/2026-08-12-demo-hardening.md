@@ -10,8 +10,74 @@ traceable; this file is updated per commit.
 | `v1.0.2` | Cross-tenant leak test over every route | 31 pass / 3 xfail |
 | `v1.0.3` | `/channels` no longer crashes for tenants without `cv42` | 31 pass / 3 xfail |
 | `v1.0.4` | Detector stops asserting root causes it never inferred | 31 pass / 3 xfail |
+| `v1.0.5` | Real status chrome, per-tenant chart precision, row overlap | 31 pass / 3 xfail |
 
 ---
+
+## v1.0.5 — status chrome, chart precision, row overlap
+
+Three cosmetic-looking defects, one of which was the first number on the page
+and wrong for every tenant.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `apps/web/components/screens/PulseScreen.tsx` | "Last ingest" computed from the newest point across the tenant's series. Shift shows the real letter; the invented countdown is gone. Outlier-row header truncates instead of overflowing. |
+| `apps/web/components/shell/AppShell.tsx` | Hardcoded `● live · last ingest 00:11` removed. Notification badge `2` removed. |
+| `apps/web/components/charts.tsx` | Distribution y-axis tick precision derived from the data range. |
+
+### The three
+
+**1. "Last ingest" was a string literal.** `● live · last ingest 00:11` in the
+shell, `KPI value="00:11"` on Pulse — for every tenant, while CEMEX's newest
+reading was 98 days old. Pulse now reduces over `SERIES` for the newest point.
+The shell version is deleted rather than reimplemented: the shell does not load
+series, so it cannot compute the real value, and it was duplicating the KPI
+anyway.
+
+**2. Shift countdown was invented.** `A · 4h 12m`, `ends 14:00`, identical for
+both tenants. `channel.shift` is a real column, so the letter stays. Shift
+length and boundaries are plant configuration nobody has given us, so the
+countdown reads "shift hours — not configured" instead of a plausible guess.
+
+**3. The distribution y-axis rounded to integers.** `v.toFixed(0)` is fine for
+the demo tenant's ~40–80 mm values. CEMEX's F80 spans about 0–1.1 mm, so every
+tick collapsed to `1` or `0` and the axis read **`1, 1, 0, 0, 0`**. Precision
+now follows the range: `yR/4 >= 10 → 0` digits, `>= 1 → 1`, `>= 0.1 → 2`,
+else `3`.
+
+**4. Outlier rows overlapped below ~1500px.** The header flex row inside the
+Pulse outlier list had no `minWidth: 0` and no truncation, so the id and the
+classification overflowed their grid cell and painted on top of the value
+column — on a 13" MacBook, which is what a demo runs on.
+
+### Decisions worth remembering
+
+**Delete, don't reimplement, when the component lacks the data.** The shell's
+"last ingest" could have been made real by adding a series fetch to `AppShell`.
+That would mean loading every channel's series on every screen to render one
+label that Pulse already shows. Removing it is the smaller and more honest
+change.
+
+**Tick precision is a per-tenant concern, not a styling choice.** This bug was
+invisible for nine days because the synthetic tenant's numbers are an order of
+magnitude larger than the real one's. Anything that formats a measurement has to
+derive its precision from the data, not from a constant chosen while looking at
+one dataset.
+
+### Verified
+
+| Check | Result |
+|---|---|
+| Demo tenant "Last ingest" | **9d ago** — matches `now() - max(t)` of `9 days 12:44` |
+| CEMEX "Last ingest" | **98d ago** — matches `98 days 14:59` |
+| CEMEX PSD y-axis | **0.75 / 0.57 / 0.38 / 0.20 / 0.01** (was `1, 1, 0, 0, 0`) |
+| Demo PSD y-axis | 50 / 39 / 29 / 19 / 9 — still integers, correct for the range |
+| Pulse rows at **1440×900** | No overlap; id truncates to `OUT-16…`, classification intact |
+| Shift KPI | `A` · "shift hours not configured" |
+| `tsc --noEmit` | clean |
+| Backend suite | 31 passed, 3 xfailed |
 
 ## v1.0.4 — the detector stops claiming to be the agent
 

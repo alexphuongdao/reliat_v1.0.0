@@ -383,6 +383,13 @@ export function DistributionChart({
   const xR = xMax - xMin || 1;
   const yR = yMax - yMin || 1;
 
+  // Tick precision has to follow the data's magnitude. This was `toFixed(0)`,
+  // which is fine for the demo tenant's ~40-80 mm values and destroys CEMEX's:
+  // its F80 spans roughly 0-1.1 mm, so every tick rounded to "1" or "0" and the
+  // axis read `1, 1, 0, 0, 0`. Four ticks across the range decides the digits.
+  const tickStep = yR / 4;
+  const yDigits = tickStep >= 10 ? 0 : tickStep >= 1 ? 1 : tickStep >= 0.1 ? 2 : 3;
+
   const x = (v: number) => pad.left + ((v - xMin) / xR) * innerW;
   const y = (v: number) => pad.top + innerH - ((v - yMin) / yR) * innerH;
 
@@ -420,7 +427,7 @@ export function DistributionChart({
             textAnchor="end" fontSize="10" fill="var(--text-3)"
             fontFamily="var(--font-mono)"
           >
-            {mode === "sieve" ? v.toFixed(0) + "%" : v.toFixed(0)}
+            {mode === "sieve" ? v.toFixed(0) + "%" : v.toFixed(yDigits)}
           </text>
         );
       })}

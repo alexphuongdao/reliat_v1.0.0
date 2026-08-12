@@ -432,15 +432,15 @@ export function AppShell({ children, commands, user }: AppShellProps) {
 
             <span style={{ flex: 1 }} />
 
-            {surface === "pulse" && (
-              <span className="mono" style={{ fontSize: 11.5, color: "var(--text-3)" }}>
-                ● live · last ingest 00:11
-              </span>
-            )}
+            {/* A hardcoded "● live · last ingest 00:11" used to sit here. It
+                duplicated the Pulse KPI, was shown for every tenant, and was
+                false for both — CEMEX's newest reading is 98 days old. The
+                shell does not load series, so it cannot compute the real
+                value; Pulse can, and does. Removed rather than faked. */}
 
-            <Button size="sm" variant="ghost" leftIcon="bell">
-              <span className="mono">2</span>
-            </Button>
+            {/* Notification count was a hardcoded "2". There is no
+                notification feed yet, so the badge is gone until there is. */}
+            <Button size="sm" variant="ghost" leftIcon="bell" />
             <Button
               size="sm"
               variant={agentOpen ? "primary" : "secondary"}
