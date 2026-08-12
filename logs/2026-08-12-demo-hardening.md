@@ -55,6 +55,34 @@ symptom other than a bill.
 
 Both branches of the v1.0.4 heading logic are now exercised on real data.
 
+---
+
+## Where this leaves the demo
+
+Every item the audit called a blocker is fixed and verified in-browser on both
+tenants. What is *not* fixed, in the order it would bite:
+
+1. **`CONF. 98%`** is a rescaled sigma, not a probability. Still rendered as a
+   percentage. Relabel or show sigma.
+2. **Belt-material colour strip is black for CEMEX** (`hsl(0:0 0.0% 0.1%)`).
+   Either the real HSL columns are near-zero or the mapping is wrong. Not
+   diagnosed.
+3. **All 1,513 CEMEX outliers are `OPEN`.** A triage inbox where nothing has
+   been triaged reads as an unused product.
+4. **Library and Agent screens still read `lib/mockData.ts`**, including a
+   fabricated ingest file list naming `cv42_2026_05_18.csv`.
+5. **A failed sign-in shows no error** — the form clears and stays put.
+6. **CEMEX data is 98 days old.** The app now says so honestly, which is better
+   than lying, but a fresh export before the demo would be better still.
+
+## Note for whoever verifies UI next
+
+`form_input` does **not** drive React controlled inputs in this app — it sets
+the DOM value without firing the events React listens for, and the submit goes
+through with empty fields and no error. `find` the element, `left_click` it by
+`ref`, then `type`. Clicking by coordinate is also unreliable here; the login
+banner shifts the fields by a few pixels depending on the signed-in name.
+
 ## v1.0.5 — status chrome, chart precision, row overlap
 
 Three cosmetic-looking defects, one of which was the first number on the page
