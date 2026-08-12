@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1924" viewBox="100 -4 1840 1924" style="background:#fff">
+<svg xmlns="http://www.w3.org/2000/svg" width="1780" height="1934" viewBox="100 -14 1780 1934" style="background:#fff">
 <defs><marker id="ah" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="context-stroke"/></marker></defs>
-<rect x="100" y="-4" width="1840" height="1924" fill="#ffffff"/>
-<text x="140" y="74.0" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#1e40af" text-anchor="start">Reliat — System Architecture</text>
+<rect x="100" y="-14.446460204493974" width="1780" height="1934.446460204494" fill="#ffffff"/>
+<text x="157.0705425040819" y="59.6" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#1e40af" text-anchor="start">Reliat — System Architecture</text>
 <text x="140" y="107.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">One request, top to bottom. The tenant boundary is the red rail: it is established once and enforced at every layer below it.</text>
 <text x="140" y="132.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#b45309" text-anchor="start">State as of 2026-08-03. Solid = built and running.  Dashed = planned, not built.</text>
 <rect x="1560" y="36" width="40" height="26" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>

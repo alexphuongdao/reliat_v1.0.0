@@ -6,6 +6,7 @@ Two views of the system, both editable.
 |---|---|
 | `reliat-system-architecture.excalidraw` | One request, top to bottom. Where tenant identity is established and where it is enforced. Where the harness sits. |
 | `reliat-data-architecture.excalidraw` | How a file of unknown shape becomes a cited answer. The three planes, the promotion gate, the three retrieval modes, the context budget. |
+| `reliat-agent-harness.excalidraw` | The `ask` path. The bounded tool loop, the action space, the 15k-token ceiling, and the four properties that make it defensible. |
 
 Solid = built and running. Dashed = designed, not built. Red = the isolation
 boundary.
@@ -29,10 +30,12 @@ consistent:
 ```bash
 python3 docs/diagrams/_tools/gen_system.py
 python3 docs/diagrams/_tools/gen_data.py
+python3 docs/diagrams/_tools/gen_agent.py
 python3 docs/diagrams/_tools/check.py docs/diagrams/*.excalidraw
 python3 docs/diagrams/_tools/preview.py \
     docs/diagrams/reliat-system-architecture.excalidraw docs/diagrams/reliat-system-architecture.svg \
-    docs/diagrams/reliat-data-architecture.excalidraw  docs/diagrams/reliat-data-architecture.svg
+    docs/diagrams/reliat-data-architecture.excalidraw  docs/diagrams/reliat-data-architecture.svg \
+    docs/diagrams/reliat-agent-harness.excalidraw     docs/diagrams/reliat-agent-harness.svg
 ```
 
 **Regenerating overwrites hand edits.** Once you start editing in Excalidraw,

@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1940" height="2224" viewBox="100 -4 1940 2224" style="background:#fff">
+<defs><marker id="ah" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="context-stroke"/></marker></defs>
+<rect x="100" y="-4" width="1940" height="2224" fill="#ffffff"/>
+<text x="140" y="74.0" font-family="ui-monospace,Menlo,monospace" font-size="34" fill="#1e40af" text-anchor="start">Reliat — Conversational Agent Harness</text>
+<text x="140" y="107.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">The `ask` path. One question, a bounded tool loop over the tenant&#x27;s own rows, one cited answer. The model never sees another tenant&#x27;s data and never writes a number it did not read.</text>
+<text x="140" y="132.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#b45309" text-anchor="start">Design as of 2026-08-12. Solid = built.  Dashed = this design, not yet built.  Red = the isolation boundary.</text>
+<rect x="1660" y="36" width="40" height="26" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1712" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">built</text>
+<rect x="1800" y="36" width="40" height="26" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1852" y="55.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">planned</text>
+<rect x="140" y="180" width="1860" height="150" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="169.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">1 · THE ASK  —  a person types a question</text>
+<rect x="180" y="215" width="620" height="95" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="490.0" y="250.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">Agent tab composer</text>
+<text x="490.0" y="267.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">POST /api/agent/threads/{id}/messages</text>
+<text x="490.0" y="285.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">or POST /api/agent/ask  (new thread)</text>
+<rect x="860" y="215" width="500" height="95" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1110.0" y="250.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">Principal (from session cookie)</text>
+<text x="1110.0" y="267.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">user · tenant · role</text>
+<text x="1110.0" y="285.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">resolved from the DB every request</text>
+<rect x="1420" y="215" width="520" height="95" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1680.0" y="250.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">TenantHarness</text>
+<text x="1680.0" y="267.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">harness_for_tenant(principal.tenant)</text>
+<text x="1680.0" y="285.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">glossary · fields · categories · budget</text>
+<polyline points="140,372 2000,372" fill="none" stroke="#dc2626" stroke-width="3"/>
+<text x="140" y="354.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#dc2626" text-anchor="start">TENANT BOUNDARY — bound here, once, from the session. `tenant_id` is NOT a tool parameter and NOT in the prompt. A fully successful prompt injection cannot move it.</text>
+<rect x="140" y="410" width="1860" height="250" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="399.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">2 · CONTEXT BUILDER  —  deterministic, Python, never the model</text>
+<rect x="180" y="450" width="340" height="145" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="350.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">System prompt</text>
+<text x="350.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">harness.ask_prompt()</text>
+<text x="350.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">cached prefix</text>
+<text x="350.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">~1.5k tok</text>
+<rect x="560" y="450" width="340" height="145" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="730.0" y="494.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Tool schemas</text>
+<text x="730.0" y="511.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">harness.ask_tools()</text>
+<text x="730.0" y="527.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">enum-bound to</text>
+<text x="730.0" y="543.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">this tenant</text>
+<text x="730.0" y="559.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">~1.2k tok</text>
+<rect x="940" y="450" width="340" height="145" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1110.0" y="494.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Thread history</text>
+<text x="1110.0" y="511.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">last N turns,</text>
+<text x="1110.0" y="527.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">older elided with</text>
+<text x="1110.0" y="543.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">an explicit marker</text>
+<text x="1110.0" y="559.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">≤4k tok</text>
+<rect x="1320" y="450" width="340" height="145" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1490.0" y="503.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Tool results</text>
+<text x="1490.0" y="519.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">truncated per call,</text>
+<text x="1490.0" y="535.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">row counts kept</text>
+<text x="1490.0" y="551.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">≤6k tok</text>
+<rect x="1700" y="450" width="280" height="145" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1840.0" y="511.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Question</text>
+<text x="1840.0" y="527.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">the user&#x27;s text</text>
+<text x="1840.0" y="543.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">≤0.5k tok</text>
+<rect x="180" y="612" width="1760" height="34" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="1060.0" y="633.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">HARD CEILING 15,000 input tokens per call  ·  measured before send  ·  over budget → oldest tool results dropped first, then history, then refuse</text>
+<rect x="140" y="700" width="1860" height="470" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="689.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">3 · THE BOUNDED TOOL LOOP  —  retrieve, then answer</text>
+<rect x="180" y="750" width="300" height="90" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="330.0" y="782.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">Anthropic</text>
+<text x="330.0" y="800.2" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">messages.create</text>
+<text x="330.0" y="817.8" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">tools=ask_tools</text>
+<rect x="560" y="750" width="300" height="90" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="710.0" y="800.6" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#374151" text-anchor="middle">stop_reason?</text>
+<rect x="940" y="735" width="420" height="120" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+<text x="1150.0" y="775.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">TOOL EXECUTOR  (our code)</text>
+<text x="1150.0" y="791.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">re-scopes EVERY query to</text>
+<text x="1150.0" y="808.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">principal.tenant_id</text>
+<text x="1150.0" y="824.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">parameterised SQL only</text>
+<rect x="1440" y="735" width="500" height="120" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="1690.0" y="783.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Postgres — this tenant&#x27;s rows</text>
+<text x="1690.0" y="799.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">channels · measurements · outliers</text>
+<text x="1690.0" y="816.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">outlier_diagnoses · agent_threads</text>
+<polyline points="480,795 560,795" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="860,795 940,795" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<text x="872" y="774.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">tool_use</text>
+<polyline points="1360,795 1440,795" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1650,735 1650,700 330,700 330,750" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5" marker-end="url(#ah)"/>
+<text x="900" y="685.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#64748b" text-anchor="start">tool_result appended → next turn  (loop)</text>
+<rect x="560" y="900" width="300" height="90" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="710.0" y="941.5" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">submit_answer</text>
+<text x="710.0" y="959.0" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#374151" text-anchor="middle">forced tool</text>
+<polyline points="710,840 710,900" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#ah)"/>
+<text x="724" y="870.0" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#64748b" text-anchor="start">end_turn</text>
+<rect x="180" y="1030" width="1760" height="100" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="1060.0" y="1068.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">STOP CONDITIONS — whichever comes first</text>
+<text x="1060.0" y="1084.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">max 6 tool rounds   ·   input tokens would exceed 15k   ·   cumulative cost &gt; tenant ceiling   ·   model calls submit_answer</text>
+<text x="1060.0" y="1101.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">On exhaustion the loop forces submit_answer with what it has. It never returns an unanswered turn and never silently truncates evidence.</text>
+<rect x="140" y="1210" width="1860" height="300" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1199.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">4 · THE ACTION SPACE  —  what the model may do (nothing else)</text>
+<rect x="180" y="1255" width="340" height="120" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="350.0" y="1303.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">list_channels()</text>
+<text x="350.0" y="1319.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">this tenant&#x27;s channels</text>
+<text x="350.0" y="1336.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">no arguments</text>
+<rect x="560" y="1255" width="340" height="120" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="730.0" y="1303.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">query_outliers(</text>
+<text x="730.0" y="1319.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> channel?, sev?, status?,</text>
+<text x="730.0" y="1336.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> since?, until?, limit≤50)</text>
+<rect x="940" y="1255" width="340" height="120" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1110.0" y="1303.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">measurement_window(</text>
+<text x="1110.0" y="1319.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> channel, around_t,</text>
+<text x="1110.0" y="1336.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> before≤40, after≤20)</text>
+<rect x="1320" y="1255" width="340" height="120" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1490.0" y="1303.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">channel_stats(</text>
+<text x="1490.0" y="1319.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> channel, metric, window)</text>
+<text x="1490.0" y="1336.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">computed in Python</text>
+<rect x="1700" y="1255" width="280" height="120" rx="8" fill="#3b82f6" stroke="#1e3a5f" stroke-width="2"/>
+<text x="1840.0" y="1303.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">get_diagnosis(</text>
+<text x="1840.0" y="1319.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"> outlier_id)</text>
+<text x="1840.0" y="1336.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">existing artifact</text>
+<rect x="180" y="1400" width="1760" height="90" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="1060.0" y="1433.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">submit_answer(answer, citations[])  —  TERMINAL, FORCED</text>
+<text x="1060.0" y="1449.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">`citations` must reference ids the executor actually returned this turn. An answer citing an id that was never retrieved is rejected and the loop</text>
+<text x="1060.0" y="1466.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">re-prompts once. This is what makes the answer auditable rather than merely fluent.</text>
+<rect x="140" y="1560" width="1860" height="330" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1549.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">5 · WHY THIS IS DEFENSIBLE  —  four properties, each enforced in code</text>
+<rect x="180" y="1605" width="420" height="250" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="390.0" y="1694.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">1 · DATA-AGNOSTIC MODEL,</text>
+<text x="390.0" y="1710.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">TENANT-SPECIFIC HARNESS</text>
+<text x="390.0" y="1726.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"></text>
+<text x="390.0" y="1743.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">One model. N harnesses.</text>
+<text x="390.0" y="1759.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">A new customer is a profile,</text>
+<text x="390.0" y="1775.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">not a fork.</text>
+<rect x="640" y="1605" width="420" height="250" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+<text x="850.0" y="1694.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">2 · GROUNDED BY</text>
+<text x="850.0" y="1710.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">CONSTRUCTION</text>
+<text x="850.0" y="1726.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"></text>
+<text x="850.0" y="1743.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Every number comes from a</text>
+<text x="850.0" y="1759.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">row the executor returned.</text>
+<text x="850.0" y="1775.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Statistics computed in Python.</text>
+<rect x="1100" y="1605" width="420" height="250" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+<text x="1310.0" y="1694.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">3 · ISOLATION UNDER</text>
+<text x="1310.0" y="1710.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">ADVERSARIAL PROMPTS</text>
+<text x="1310.0" y="1726.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"></text>
+<text x="1310.0" y="1743.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">tenant_id is bound below the</text>
+<text x="1310.0" y="1759.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">model. Injection cannot reach</text>
+<text x="1310.0" y="1775.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">it. 404, never 403.</text>
+<rect x="1560" y="1605" width="420" height="250" rx="8" fill="#ddd6fe" stroke="#6d28d9" stroke-width="2"/>
+<text x="1770.0" y="1702.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">4 · AUDITABLE ARTIFACT</text>
+<text x="1770.0" y="1718.6" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle"></text>
+<text x="1770.0" y="1734.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Every turn persists: prompt,</text>
+<text x="1770.0" y="1751.1" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">tools called, rows cited,</text>
+<text x="1770.0" y="1767.4" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">tokens, cost. Replayable.</text>
+<rect x="180" y="1900" width="1760" height="34" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+<text x="1060.0" y="1921.9" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">The moat is not the model. It is the harness, the action space, and the boundary — all of which are ours and none of which a competitor gets by calling the same API.</text>
+<rect x="140" y="1980" width="1860" height="200" rx="8" fill="transparent" stroke="#64748b" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="154" y="1969.0" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#64748b" text-anchor="start">6 · DELIBERATELY NOT IN THIS PATH</text>
+<rect x="180" y="2025" width="420" height="130" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="390.0" y="2070.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Vector search</text>
+<text x="390.0" y="2086.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">No embeddings. Mode A</text>
+<text x="390.0" y="2103.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">(structured tools) answers</text>
+<text x="390.0" y="2119.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">~80% of real questions.</text>
+<rect x="640" y="2025" width="420" height="130" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="850.0" y="2070.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Cross-tenant learning</text>
+<text x="850.0" y="2086.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">The knowledge plane and</text>
+<text x="850.0" y="2103.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">promotion gate stay out</text>
+<text x="850.0" y="2119.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">until a human gate exists.</text>
+<rect x="1100" y="2025" width="420" height="130" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1310.0" y="2070.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Writes</text>
+<text x="1310.0" y="2086.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">The agent reads. It cannot</text>
+<text x="1310.0" y="2103.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">acknowledge, resolve or</text>
+<text x="1310.0" y="2119.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">assign. Humans do that.</text>
+<rect x="1560" y="2025" width="420" height="130" rx="8" fill="#dbeafe" stroke="#1e40af" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="1770.0" y="2070.5" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Free SQL</text>
+<text x="1770.0" y="2086.8" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">No generated SQL, ever.</text>
+<text x="1770.0" y="2103.0" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">Typed tools → parameterised</text>
+<text x="1770.0" y="2119.2" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#374151" text-anchor="middle">queries only.</text>
+</svg>

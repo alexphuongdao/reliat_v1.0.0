@@ -4,6 +4,21 @@ orphaned bindings."""
 import json
 import sys
 
+def extent(e):
+    """True (x0, y0, x1, y1) of an element.
+
+    Excalidraw anchors a linear element at its FIRST point and stores `width`
+    as the bounding-box span, so `x + width` is wrong for any arrow that runs
+    right-to-left or bottom-to-top — it reports an extent past the real one.
+    Derive linear extents from the points instead.
+    """
+    if e.get("type") in ("arrow", "line") and e.get("points"):
+        xs = [e["x"] + p[0] for p in e["points"]]
+        ys = [e["y"] + p[1] for p in e["points"]]
+        return min(xs), min(ys), max(xs), max(ys)
+    return e["x"], e["y"], e["x"] + e["width"], e["y"] + e["height"]
+
+
 
 def rects_overlap(a, b, pad=0):
     return not (a[0] + a[2] + pad <= b[0] or b[0] + b[2] + pad <= a[0]
@@ -70,7 +85,7 @@ def check(path):
 
     xs = [e["x"] for e in els]
     ys = [e["y"] for e in els]
-    xe = [e["x"] + e["width"] for e in els]
+    xe = [extent(e)[2] for e in els]
     ye = [e["y"] + e["height"] for e in els]
     print(f"{path.split('/')[-1]}: {len(els)} elements, "
           f"canvas {min(xs):.0f},{min(ys):.0f} → {max(xe):.0f},{max(ye):.0f}")

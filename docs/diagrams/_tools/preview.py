@@ -7,14 +7,29 @@ import html
 import json
 import sys
 
+def extent(e):
+    """True (x0, y0, x1, y1) of an element.
+
+    Excalidraw anchors a linear element at its FIRST point and stores `width`
+    as the bounding-box span, so `x + width` is wrong for any arrow that runs
+    right-to-left or bottom-to-top — it reports an extent past the real one.
+    Derive linear extents from the points instead.
+    """
+    if e.get("type") in ("arrow", "line") and e.get("points"):
+        xs = [e["x"] + p[0] for p in e["points"]]
+        ys = [e["y"] + p[1] for p in e["points"]]
+        return min(xs), min(ys), max(xs), max(ys)
+    return e["x"], e["y"], e["x"] + e["width"], e["y"] + e["height"]
+
+
 def esc(s):
     return html.escape(s, quote=True)
 
 def render(path, out):
     d = json.load(open(path))
     els = [e for e in d["elements"] if not e.get("isDeleted")]
-    xs = [e["x"] for e in els] + [e["x"] + e["width"] for e in els]
-    ys = [e["y"] for e in els] + [e["y"] + e["height"] for e in els]
+    xs = [extent(e)[0] for e in els] + [extent(e)[2] for e in els]
+    ys = [extent(e)[1] for e in els] + [extent(e)[3] for e in els]
     pad = 40
     minx, miny = min(xs) - pad, min(ys) - pad
     w, h = max(xs) - minx + pad, max(ys) - miny + pad
