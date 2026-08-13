@@ -630,7 +630,6 @@ class Component extends DCLogic {
     });
 
     // sub-progress
-    const scanT = this.norm(p, 0.035, 0.235);
     const resolveT = this.ss(this.norm(p, 0.285, 0.375));
     const anomalyT = this.ss(this.norm(p, 0.375, 0.44));
     const pushT = this.ss(this.norm(p, 0.44, 0.49));
@@ -655,29 +654,53 @@ class Component extends DCLogic {
     this.chip.style.transform = 'translate(-50%,-50%) scale(' + this.lerp(0.9, 1, chipO) + ')';
   }
 
-  drawBelt(sx, scanT) {
+  drawBelt(sx, gradationT) {
     const ctx = this.ctx, vw = this.vw, vh = this.vh;
     ctx.save();
     ctx.translate(sx, 0);
-    const beltY = vh * 0.5, beltH = vh * 0.2;
-    // The footage supplies the belt and material. Canvas retains only Reliat's
-    // optical plane and the registration trail so the scan remains scroll-led.
-    if (scanT > 0 && scanT < 1) {
-      const planeX = vw * 0.1 + scanT * vw * 0.8;
-      const grad = ctx.createLinearGradient(planeX - 40, 0, planeX + 40, 0);
-      grad.addColorStop(0, 'rgba(56,182,255,0)');
-      grad.addColorStop(0.5, 'rgba(56,182,255,.52)');
-      grad.addColorStop(1, 'rgba(56,182,255,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(planeX - 40, beltY - vh * 0.14, 80, beltH + vh * 0.14);
-      ctx.strokeStyle = '#38B6FF'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(planeX, beltY - vh * 0.14); ctx.lineTo(planeX, beltY + beltH); ctx.stroke();
-      // sample crosses left behind
-      ctx.strokeStyle = 'rgba(56,182,255,.55)'; ctx.lineWidth = 1.2;
-      for (let sxp = vw * 0.1; sxp < planeX; sxp += vw * 0.04) {
-        const yy = beltY - vh * 0.09 - ((sxp * 13) % (vh * 0.05));
-        ctx.beginPath(); ctx.moveTo(sxp - 4, yy); ctx.lineTo(sxp + 4, yy); ctx.moveTo(sxp, yy - 4); ctx.lineTo(sxp, yy + 4); ctx.stroke();
-      }
+    // Relative-size rings travel with the footage to make gradation legible
+    // without implying that the pilot is already performing optical sizing.
+    const reveal = this.ss(this.clamp(gradationT * 2.8, 0, 1));
+    if (reveal > 0) {
+      const activeVideo = this.beltVideos && this.beltVideos[this._beltActive];
+      const duration = activeVideo && Number.isFinite(activeVideo.duration) ? activeVideo.duration : 6;
+      const videoT = activeVideo ? activeVideo.currentTime / duration : 0;
+      const markers = [
+        { phase: .02, y: .47, r: .017 },
+        { phase: .19, y: .58, r: .029 },
+        { phase: .37, y: .45, r: .013 },
+        { phase: .54, y: .54, r: .038 },
+        { phase: .73, y: .55, r: .022 },
+        { phase: .91, y: .49, r: .031 }
+      ];
+      const scale = Math.min(vw, vh);
+      markers.forEach((marker, index) => {
+        const travel = (marker.phase + videoT * 1.18) % 1.18;
+        const x = vw * (travel - .06);
+        const y = vh * marker.y;
+        const radius = scale * marker.r;
+        const copyClearance = this.ss(this.norm(x, vw * .30, vw * .48));
+        const edgeFade = 1 - this.ss(this.norm(x, vw * .92, vw * 1.02));
+        const alpha = reveal * Math.max(.28, copyClearance) * edgeFade;
+        if (alpha <= 0) return;
+
+        ctx.strokeStyle = 'rgba(85,200,232,' + (.74 * alpha) + ')';
+        ctx.lineWidth = index % 2 ? 1.4 : 1.1;
+        ctx.shadowColor = 'rgba(85,200,232,' + (.22 * alpha) + ')';
+        ctx.shadowBlur = 7;
+        ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const tick = Math.max(4, radius * .2);
+        ctx.strokeStyle = 'rgba(85,200,232,' + (.82 * alpha) + ')';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y - radius - tick); ctx.lineTo(x, y - radius + tick);
+        ctx.moveTo(x, y + radius - tick); ctx.lineTo(x, y + radius + tick);
+        ctx.moveTo(x - radius - tick, y); ctx.lineTo(x - radius + tick, y);
+        ctx.moveTo(x + radius - tick, y); ctx.lineTo(x + radius + tick, y);
+        ctx.stroke();
+      });
     }
     ctx.restore();
   }
