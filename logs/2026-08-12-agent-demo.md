@@ -13,6 +13,7 @@ file covers the pre-demo defect sweep, this one covers the agent surface.
 | `v1.0.7` | Schema + API: `agent_threads`, `agent_messages`, two GET routes | 31 pass / 3 xfail |
 | `v1.0.8` | Agent tab rebuilt on real data; canned reply deleted | 31 pass / 3 xfail |
 | `v1.0.9` | `ask_prompt()`, `ask_tools()`, per-tenant loop budget. Route-walk fix. | 64 pass / 3 xfail |
+| `v1.0.10` | `agent_tools.py` (executor) + `agent_context.py` (budget). **Checkpoint.** | 105 pass / 3 xfail |
 
 ---
 
@@ -289,6 +290,157 @@ Host venv, Python 3.13 / FastAPI 0.141.1:
   the API container has no pytest. Worth pinning `fastapi` in `pyproject.toml`
   rather than `>=0.115` — an unpinned minor bump is what silently disarmed the
   security suite.
+
+---
+
+# `v1.0.10` — the executor and the budget
+
+The two modules the whole security claim rests on. `v1.0.9` described what the
+model may *say*; this decides what actually runs, and how much of it fits.
+
+Still no loop and no route — nothing here can be reached from the network yet.
+That is deliberate: this is the agreed review checkpoint, because if the
+executor is wrong every guarantee above it is decorative.
+
+## What changed
+
+| File | Change |
+|---|---|
+| `app/agent_tools.py` | **New, 460 lines.** The five read tools, the dispatch table, `run_tool()`, `validate_citations()`. |
+| `app/agent_context.py` | **New, 300 lines.** `ContextBuilder` — measures before send, elides in a fixed order, refuses rather than truncates. |
+| `tests/test_agent_tools.py` | **New, 19 tests.** Hostile arguments across the whole action space, both directions. |
+| `tests/test_agent_context.py` | **New, 22 tests.** Budget arithmetic, elision order, message shaping. |
+
+## Decisions worth remembering
+
+**`run_tool(name, args, *, tenant_id: str, ...)` — the tenant is a required
+`str`, not a principal it reads.** This is the strongest thing in the module and
+it is a shape, not a check. There is no default, no `Optional`, and no principal
+to interrogate, so there is no code path through this file that reaches the
+database without a tenant named at the call site. A superadmin principal
+(`tenant_id is None`) cannot be passed through by accident: it raises.
+
+This deviates from what the diagram drew (`run_tool(..., principal, session)`).
+Passing the principal would have meant every branch reading `principal.tenant_id`
+and every branch having to remember the `is None` case. Passing `tenant_id: str`
+moves that decision to exactly one place — the loop, in `v1.0.11` — and makes the
+rest structurally incapable of getting it wrong.
+
+**One `_owned_channel()`, not a filter per tool.** Three tools accept a
+`channel_id`. All three resolve it through the same function, which has the
+tenant predicate baked in and returns `None` rather than a foreign row. One
+place to read when asking whether channel access is scoped, and one place a
+sabotage test can prove matters.
+
+**A foreign id and a nonexistent id get byte-identical answers.** Same reasoning
+as 404-not-403 on the HTTP surface, one layer down: if `chan-bravo` produced a
+different error than `chan-nope`, the executor would be an enumeration oracle
+for another customer's channel and event ids — reachable by anything that can
+influence the model's tool arguments. `test_naming_another_tenants_channel_is_
+indistinguishable_from_a_typo` compares the two error strings with the id itself
+masked out.
+
+**`channel_stats` anchors on the channel's newest sample, not `now`.** This is
+historical plant data. Anchoring a "last 24h" window on wall-clock time returns
+zero rows for every question, and the model correctly concludes the channel is
+silent — a confidently wrong answer produced by a correct model reading a
+badly-built context.
+
+**`metric` resolves through `harness.evidence_field()`.** That is the only path
+from a model-supplied string to a column read. Asking for `psd`, `id`, or
+`__class__` fails; asking for `SDRatio10_5` succeeds under the CEMEX harness and
+fails under the demo one, on the same row, with the column populated.
+
+**Errors go back to the model; only caller mistakes raise.** A bad enum value
+costs one round and a correction. A missing tenant is a programming error and
+must not be recoverable.
+
+**Elision replaces a result's content, it does not remove the message.** The API
+requires every `tool_use` block to be answered by a `tool_result`; dropping the
+message would orphan the block and get the request rejected outright. The marker
+keeps `row_count` and up to 12 ids, so an elided result stays citable — losing
+the ids would make everything the model read unciteable, and citation is the
+entire audit trail.
+
+**Elision state is recomputed from scratch on every build.** The loop keeps no
+context in memory between rounds; the builder is handed the harness, the
+history, and every round so far, and reconstructs the request. That is what
+"the context is refilled on every re-invocation" means here, and it is why a
+result elided under a tight earlier build stops being elided once it fits.
+
+**Results are given up before history.** A tool result can be re-fetched for the
+cost of one round. A dropped conversation turn is gone, and losing the question
+someone asked two turns ago is how an agent starts answering something nobody
+asked.
+
+**Token estimate is `len/3.0`, deliberately pessimistic.** No local tokenizer,
+and calling the count-tokens endpoint would add a network round trip to every
+iteration. English prose is ~4 chars/token, JSON ~3. Erring high drops evidence
+marginally early; erring low means discovering the ceiling as a paid-for API
+error. A test pins the direction.
+
+## Verified
+
+Full suite, host venv (Python 3.13 / FastAPI 0.141.1):
+
+| Check | Result |
+|---|---|
+| `pytest -q` | **105 passed, 3 xfailed** |
+| New tests | 19 executor + 22 context builder |
+
+**Sabotage — the tenant predicate removed one at a time, suite re-run each
+time.** A security test that has never been seen to fail is not evidence.
+
+| Predicate removed | Result |
+|---|---|
+| `_owned_channel` → `Channel.tenant_id == tenant_id` | **DETECTED** — 2 failed |
+| `_list_channels` → `.where(Channel.tenant_id == tenant_id)` | **DETECTED** — 3 failed |
+| `_query_outliers` → `.where(Channel.tenant_id == tenant_id)` | **DETECTED** — 1 failed |
+| `_get_diagnosis` → `Channel.tenant_id == tenant_id` | **DETECTED** — 2 failed |
+| Restored, suite re-run | 105 passed, 3 xfailed |
+
+Hostile-argument matrix — every tool × 12 argument sets, both directions
+(ALPHA reaching for BRAVO, BRAVO reaching for ALPHA). Includes `tenant_id` and
+`all_tenants` keys the schema does not define, SQL fragments in string fields,
+and `limit: 100000`:
+
+| Check | Result |
+|---|---|
+| Any BRAVO marker in an ALPHA payload | none |
+| Any ALPHA marker in a BRAVO payload | none |
+| `run_tool(tenant_id=None / "" / 0)` | `ValueError`, no query issued |
+| Unknown tool name | error payload, no dispatch |
+| `limit: 100000` | clamped to 50, `truncated: true` |
+| `before/after: 9999` | clamped to 40 / 20 |
+| `metric` = `id`, `psd`, `__class__`, `channel_id`, `sieve_passing_raw` | all rejected |
+| `SDRatio10_5` under CEMEX / under DEMO, same row | accepted / rejected |
+| Citation of an id no tool returned | rejected |
+| Citation of a real outlier id under `kind: "diagnosis"` | rejected |
+
+Context builder:
+
+| Check | Result |
+|---|---|
+| 6 rounds × 120 rows + 4k-word history | fits under 15,000, 6 results elided |
+| Elision order | oldest first, no holes |
+| History dropped only after results exhausted | yes |
+| Question of 200,000 chars | `ContextTooLarge`, names the ceiling |
+| `build()` twice on the same rounds | identical messages and token count |
+| Every `tool_use` paired with a `tool_result`, before and after elision | yes |
+| No two consecutive same-role messages | yes |
+
+## Still open after `v1.0.10`
+
+- **Nothing calls either module.** No loop, no route, no UI. The composer is
+  still inert.
+- **Cost is not yet enforced anywhere.** `max_cost_usd` is declared and read by
+  nothing until the loop lands — the ceiling that actually binds today is the
+  token estimate.
+- **The estimate is an estimate.** It has never been compared against the real
+  `usage.input_tokens` from a live call. First thing worth checking once
+  `v1.0.11` makes one: if it reads low, the divisor moves.
+- **`validate_citations` is written and unused.** Wiring it into the forced
+  `submit_answer` is `v1.0.11`.
 
 ---
 
