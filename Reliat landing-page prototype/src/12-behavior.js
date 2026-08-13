@@ -71,7 +71,7 @@ class Component extends DCLogic {
     this.NS = 7;
 
     if (this.mineVideo) {
-      this.mineVideo.loop = false;
+      this.mineVideo.loop = true;
       this.mineVideo.muted = true;
       this.mineVideo.defaultMuted = true;
       this.mineVideo.playsInline = true;
@@ -128,7 +128,12 @@ class Component extends DCLogic {
 
   onScroll() {
     this.updateMine();
-    if (this.mode !== 'sequence') this.target = this.computeP();
+    if (this.mode === 'sequence') {
+      const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      if (this.progress) this.progress.style.width = (this.clamp(window.scrollY / total, 0, 1) * 100) + '%';
+    } else {
+      this.target = this.computeP();
+    }
   }
 
   computeMineP() {
@@ -147,7 +152,7 @@ class Component extends DCLogic {
       this.minePin.style.visibility = 'visible';
     } else {
       this.minePin.style.position = 'fixed';
-      this.minePin.style.visibility = mineRect.top <= 0 && mineRect.bottom > 0 ? 'visible' : 'hidden';
+      this.minePin.style.visibility = 'visible';
     }
     if (this.pin) {
       if (this.mode === 'sequence') {
@@ -159,7 +164,7 @@ class Component extends DCLogic {
     }
     const copyO = 1 - this.ss(this.norm(p, 0.08, 0.46));
     const scrollO = 1 - this.ss(this.norm(p, 0.015, 0.18));
-    const veilO = this.ss(this.norm(p, 0.72, 0.995));
+    const veilO = this.ss(this.norm(p, 0.62, 0.98));
     if (this.mineCopy) {
       this.mineCopy.style.opacity = copyO;
       const y = this.vw < 600 ? (1 - copyO) * 14 : -46 + (1 - copyO) * 3;
@@ -168,8 +173,8 @@ class Component extends DCLogic {
         : 'translateY(' + y + '%)';
     }
     if (this.mineScroll) this.mineScroll.style.opacity = scrollO;
-    if (this.mineShade) this.mineShade.style.opacity = this.lerp(1, 0.58, this.ss(this.norm(p, 0.22, 0.68)));
-    if (this.mineTransition) this.mineTransition.style.opacity = veilO;
+    if (this.mineShade) this.mineShade.style.opacity = this.lerp(1, 0.76, this.ss(this.norm(p, 0.22, 0.68)));
+    if (this.mineTransition) this.mineTransition.style.opacity = veilO * 0.92;
     this.mineVideo.style.transform = 'scale(1.002)';
   }
 
@@ -180,12 +185,13 @@ class Component extends DCLogic {
     this.canvas.width = this.vw * dpr;
     this.canvas.height = this.vh * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const seq = this.vw < 900 || this.prefersReducedMotion;
+    const seq = true;
     if (this.mineTrack && this.minePin) {
       this.mineTrack.style.height = '100vh';
       this.minePin.style.position = this.prefersReducedMotion ? 'relative' : 'fixed';
     }
     this.setMode(seq ? 'sequence' : 'cinematic');
+    this.onScroll();
     this.target = this.computeP();
     this.p = this.target;
     if (this.mode === 'cinematic') this.applyCinematic();
@@ -197,6 +203,7 @@ class Component extends DCLogic {
     if (mode === this.mode) return;
     this.mode = mode;
     if (mode === 'sequence') {
+      const compact = this.vw < 900;
       this.track.style.height = 'auto';
       this.pin.style.position = 'static';
       this.pin.style.height = 'auto';
@@ -208,17 +215,22 @@ class Component extends DCLogic {
       this.world.style.transform = 'none';
       this.canvas.style.display = 'none';
       this.chip.style.display = 'none';
+      (this.beltVideos || []).forEach(video => video.pause());
       this.beltSvgHost.style.display = 'none';
       this.sizeSvgHost.style.display = 'block';
       this.sizeSvgHost.style.position = 'relative';
       this.sizeSvgHost.style.inset = 'auto';
       this.sizeSvgHost.style.margin = '18px 0 28px';
-      this.evGrid.style.gridTemplateColumns = '1fr';
-      this.evGrid.style.gridTemplateRows = 'auto';
-      this.hyps.forEach(h => { h.style.gridTemplateColumns = '42px minmax(0,1fr)'; });
-      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = '1fr'; });
-      if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = '1fr';
-      if (this.artifactMetrics) this.artifactMetrics.style.gridTemplateColumns = 'repeat(2,1fr)';
+      this.evGrid.style.gridTemplateColumns = compact ? '1fr' : '1.12fr 1fr 1fr';
+      this.evGrid.style.gridTemplateRows = compact ? 'auto' : 'repeat(2,minmax(134px,1fr))';
+      this.hyps.forEach(h => {
+        h.style.gridTemplateColumns = compact
+          ? '42px minmax(0,1fr)'
+          : '74px minmax(255px,.9fr) minmax(500px,1.65fr) 92px';
+      });
+      this.hypEvidence.forEach(e => { e.style.gridTemplateColumns = compact ? '1fr' : 'repeat(3,minmax(0,1fr))'; });
+      if (this.topologyGrid) this.topologyGrid.style.gridTemplateColumns = compact ? '1fr' : '1.75fr .75fr';
+      if (this.artifactMetrics) this.artifactMetrics.style.gridTemplateColumns = compact ? 'repeat(2,1fr)' : 'repeat(4,1fr)';
       this.finalScene.style.flexDirection = 'column';
       this.finalScene.style.gap = '72px';
       this.qa('[data-scene]').forEach((s, i) => {
@@ -230,8 +242,8 @@ class Component extends DCLogic {
         s.style.flex = 'none';
         s.style.width = '100%';
         s.style.height = 'auto';
-        s.style.minHeight = i === 1 ? '100svh' : 'auto';
-        s.style.padding = '84px 7vw 84px';
+        s.style.minHeight = '100svh';
+        s.style.padding = '96px 7vw';
         s.style.borderBottom = '1px solid rgba(175,211,198,.14)';
       });
       this.copies.forEach(c => { c.setAttribute('style', c._css + ';position:relative;left:auto;right:auto;top:auto;bottom:auto;inset:auto;opacity:1;transform:none;background:transparent;margin-bottom:18px'); });

@@ -20,8 +20,9 @@
   a:hover{color:#1F41BB}
   ::selection{background:#C1FF72;color:#101728}
   @keyframes rdot{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
-  [data-mine-track]{position:relative;height:100vh;height:100svh;background:#101728}
-  [data-mine-pin]{position:fixed;top:0;left:0;width:100%;height:100vh;height:100svh;overflow:hidden;background:#171713;isolation:isolate;z-index:5}
+  [data-root]{isolation:isolate;background:var(--night)!important}
+  [data-mine-track]{position:relative;height:100vh;height:100svh;background:transparent}
+  [data-mine-pin]{position:fixed;top:0;left:0;width:100%;height:100vh;height:100svh;overflow:hidden;background:#171713;isolation:isolate;z-index:0;pointer-events:none}
   [data-mine-video]{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:1;transform:scale(1.002);will-change:transform}
   [data-mine-shade]{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(6,10,15,.76) 0%,rgba(6,10,15,.5) 27%,rgba(6,10,15,.08) 62%,rgba(6,10,15,.12) 100%),linear-gradient(0deg,rgba(6,10,15,.5) 0%,transparent 42%,rgba(6,10,15,.12) 100%)}
   [data-mine-copy]{position:absolute;z-index:3;left:8vw;top:50%;width:min(760px,55vw);transform:translateY(-46%);color:#fffdf4;will-change:opacity,transform}
@@ -32,7 +33,7 @@
   [data-mine-scroll]{position:absolute;z-index:3;left:8vw;bottom:34px;display:flex;align-items:center;gap:12px;font-size:9px;color:rgba(255,253,244,.78);will-change:opacity}
   [data-mine-scroll] i{position:relative;display:block;width:44px;height:1px;background:rgba(255,253,244,.42);overflow:hidden}
   [data-mine-scroll] i::after{content:"";position:absolute;inset:0;background:#C1FF72;transform:translateX(-100%);animation:mine-scroll-line 1.8s ease-in-out infinite}
-  [data-mine-transition]{position:absolute;inset:0;z-index:4;pointer-events:none;background:var(--night);opacity:0;will-change:opacity}
+  [data-mine-transition]{position:absolute;inset:0;z-index:4;pointer-events:none;background:rgba(5,13,18,.98);opacity:0;will-change:opacity}
   @keyframes mine-scroll-line{0%{transform:translateX(-100%)}55%,100%{transform:translateX(100%)}}
   [data-hero-kicker]{padding-left:max(0px,calc(165px - 8vw))}
   [data-topology-plate]{background:#fffdf4;border:1px solid rgba(16,23,40,.18);box-shadow:0 22px 60px -48px rgba(16,23,40,.36)}
@@ -128,7 +129,18 @@
   [data-hyp-primary] [data-hyp-score] strong,[data-hyp-primary] [data-hyp-score] span{color:#218157}
 
   /* Reliat night system — the footage carries the light; the interface recedes. */
-  [data-root],[data-track],[data-pin],[data-world],[data-scene]{background:var(--night)}
+  [data-layout="vertical"] [data-track]{position:relative;z-index:1;background:transparent!important}
+  [data-layout="vertical"] [data-pin],[data-layout="vertical"] [data-world]{background:transparent!important}
+  [data-layout="vertical"] [data-scene]{background:rgba(7,20,24,.64)!important;border-top:1px solid rgba(175,211,198,.12)!important}
+  [data-layout="vertical"] [data-scene]:nth-child(even){background:rgba(5,16,20,.72)!important}
+  [data-layout="vertical"] [data-belt-video],
+  [data-layout="vertical"] [data-belt-video-next],
+  [data-layout="vertical"] [data-belt-grade],
+  [data-layout="vertical"] [data-belt-size-mobile]{display:none!important}
+  [data-layout="vertical"] [data-scene="1"]{display:flex!important;flex-direction:column;justify-content:center;overflow:visible}
+  [data-layout="vertical"] [data-scene="1"] [data-copy]:last-child{margin-top:auto!important;padding-top:44px}
+  [data-layout="vertical"] [data-scene="2"]>[data-copy]{max-width:680px!important}
+  [data-layout="vertical"] [data-copy="cta"]{min-height:min(720px,82svh)}
   [data-chrome]{color:var(--ink)}
   [data-progress-wrap]{background:rgba(218,235,229,.16)!important}
   [data-progress]{background:var(--green)!important}
@@ -317,6 +329,11 @@
     [data-copy="artifact"]>div:first-child{text-align:left!important;margin-bottom:14px!important}
     [data-artifact-frame]{height:clamp(300px,54svh,460px);border-radius:12px}
     [data-artifact-image]{width:auto;max-width:none;height:100%;object-fit:cover;object-position:12% center}
+  }
+
+  @media (min-width:900px){
+    [data-layout="vertical"] [data-scene]{padding-top:clamp(108px,13vh,150px)!important;padding-bottom:clamp(108px,13vh,150px)!important}
+    [data-layout="vertical"] [data-scene="1"] [data-copy]:first-of-type{max-width:720px!important}
   }
 </style>
 </helmet>

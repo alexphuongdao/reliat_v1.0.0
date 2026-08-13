@@ -70,9 +70,10 @@ Edit source files, run `python3 build.py`, and refresh the browser tab serving
   - `auditable-incident-artifact.png` — real incident-detail interface used in
     the closing artifact scene
 - Approved browser videos: `public/assets/video/`
-  - `mine-hero-desktop.mp4` — one-shot truck / primary-crusher opening
-  - `mine-conveyor-loop.mp4` — mirrored left-to-right conveyor footage with a
-    two-layer crossfade loop applied by `src/12-behavior.js`
+  - `mine-hero-desktop.mp4` — temporary continuous full-page process-film
+    background; full-strength in the hero and heavily veiled below it
+  - `mine-conveyor-loop.mp4` — retained as an archived browser-ready asset but
+    no longer displayed in the vertical story direction
 - Runtime required by the generated page: `public/support.js`
 
 Keep working files and large source exports out of `public/`; only final files
@@ -95,10 +96,11 @@ asset into `public/assets/video/`.
 
 ## Visual verification
 
-Because this is scroll-driven and canvas-animated, a successful build is not
-enough. Load the built page, screenshot it, and scroll through the real desktop
-and mobile states after every visual edit.
+Because the page combines a fixed video layer with responsive vertical
+chapters, a successful build is not enough. Load the built page, screenshot it,
+and scroll through the real desktop and mobile states after every visual edit.
 
 The current visual system is intentionally dark: deep navy-green page and
 panel surfaces, warm-white type, restrained teal/green instrumentation, and
-brightness concentrated in the two photographic video scenes.
+brightness concentrated in the opening film and progressively suppressed under
+the content chapters.
