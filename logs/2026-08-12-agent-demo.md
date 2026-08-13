@@ -12,6 +12,7 @@ file covers the pre-demo defect sweep, this one covers the agent surface.
 |---|---|---|
 | `v1.0.7` | Schema + API: `agent_threads`, `agent_messages`, two GET routes | 31 pass / 3 xfail |
 | `v1.0.8` | Agent tab rebuilt on real data; canned reply deleted | 31 pass / 3 xfail |
+| `v1.0.9` | `ask_prompt()`, `ask_tools()`, per-tenant loop budget. Route-walk fix. | 64 pass / 3 xfail |
 
 ---
 
@@ -169,6 +170,127 @@ In-browser as CEMEX, 1508×815:
 | "Open outlier" | Navigates to `/outliers?o=OUT-F0A184698970`, row expanded, **same artifact** |
 | Outliers screen behaviour | Unchanged |
 | `tsc --noEmit` | clean |
+
+---
+
+# `v1.0.9` — the `ask` action space
+
+The harness could describe one thing: how to diagnose an outlier whose evidence
+we had already chosen. A free-text question is a different shape — the model has
+to *find* the evidence — so it needs a second prompt, a set of read tools, and a
+budget, because a loop the model steers can grow along dimensions a single call
+cannot. This adds all three to `TenantHarness`. Nothing calls them yet.
+
+Design is `docs/diagrams/reliat-agent-harness.excalidraw` (the loop) and
+`reliat-harness-detail.excalidraw` (the objects, band 4 for the file layout).
+
+## What changed
+
+| File | Change |
+|---|---|
+| `app/harness.py` | `ContextPolicy` gains `max_rounds`, `max_input_tokens`, `max_cost_usd`, and two sub-budgets. New `ask_prompt()`, `ask_tools()`, `evidence_field()`. Tool names and caps hoisted to module constants. |
+| `app/routes/harness.py` | `GET /api/harness` now returns `askTools`, `maxRounds`, `maxInputTokens`, `maxCostUsd`. |
+| `tests/_routes.py` | **New.** Version-proof route enumeration — see the bug below. |
+| `tests/test_route_isolation.py` | Uses the walk; new tripwire test on the walk itself. |
+| `tests/test_cross_tenant_leak.py` | Uses the walk; refuses to run if it returns fewer than 20 routes. |
+| `tests/test_harness_isolation.py` | 20 new tests: `TestAskActionSpace`, `TestAskPrompt`, loop-budget bounds. |
+
+## Decisions worth remembering
+
+**Tool names and row caps are module constants, not literals inside the
+schema.** `MAX_OUTLIER_ROWS` is read by the thing that tells the model the limit
+and, in `v1.0.10`, by the thing that clamps the query. One definition. A schema
+that advertises 50 while the executor allows 500 is exactly the kind of drift
+nobody notices until it is a bill.
+
+**`metric` is enum-bound to the tenant's own evidence fields.** Not "the model is
+instructed not to ask for SDRatio10_5" — for the demo harness the value is not in
+the enum, so the call cannot be formed. The test asserting this also asserts
+CEMEX *does* have it, so the check can't pass by both being empty.
+
+**No tool takes a scope parameter, and a test enforces the absence.** The
+executor adds `principal.tenant_id` regardless, so a `tenant_id` argument would
+be inert — but an inert field is a field someone later wires up, and it gives a
+prompt injection somewhere to aim. `test_no_tool_accepts_a_scope_parameter`
+scans every property name of every tool for scope words.
+
+**`ask_prompt()` never says the word "tenant".** Same reasoning one level up. The
+boundary is bound below the model; naming it in the prompt only supplies a
+concept for an injected instruction to argue with. This forced a wording change
+in the GENERIC profile's operating rule ("this site", not "this tenant").
+
+**The budget sub-allocations deliberately do not sum to the ceiling.** History
+gets 4k, tool results 6k, out of 15k. The remainder is the system prompt, tool
+schemas and the question. If the parts summed to the whole there would be no
+headroom and a long thread could crowd out the evidence it was asking about.
+
+**`max_cost_usd` is a backstop, not the control.** Rounds and tokens bind first
+and bind predictably. The dollar cap exists for the case where they somehow do
+not. $1.00 per call for both tenants, per your decision.
+
+## Bug found during verification
+
+**The route-enumerating security tests had gone vacuous.** Both
+`test_route_isolation` and `test_cross_tenant_leak` work by walking
+`app.routes` and filtering `isinstance(route, APIRoute)`. FastAPI **0.141**
+changed `include_router()` to leave an opaque `_IncludedRouter` wrapper in that
+list instead of flattening the routes into it; the real routes now hang off
+`.original_router.routes`.
+
+Measured on the installed version:
+
+```
+fastapi 0.141.1
+old comprehension:  1 routes      ← /api/health, the one route with no data
+new walk         : 22 method-routes
+```
+
+So the leak test was iterating a single route — the health check — and asserting
+nothing about the other 21. It would have reported "passed" while every data
+route went unchecked.
+
+It surfaced only by luck: `test_public_allowlist_has_no_stale_entries` compares
+the allowlist against live routes, so an empty walk made *that* fail loudly. The
+two tests that actually matter failed for a downstream reason, not because they
+detected their own blindness.
+
+Fixed by `tests/_routes.py`, which unwraps `original_router` and any nested
+`routes` recursively, and by two new guards so this cannot go quiet again:
+`test_the_route_walk_actually_finds_routes` asserts >20 routes and names five
+that must be present, and `_routes()` in the leak test asserts the same before
+running any check.
+
+Worth stating plainly: **the isolation evidence recorded for `v1.0.2`–`v1.0.8`
+was collected on an older FastAPI where the walk worked.** The sabotage runs
+that proved the tests could fail were real. But anything re-run after the image
+was rebuilt would have been measuring almost nothing, and the suite would not
+have said so.
+
+## Verified
+
+Host venv, Python 3.13 / FastAPI 0.141.1:
+
+| Check | Result |
+|---|---|
+| Full suite | **64 passed, 3 xfailed** |
+| Route walk, old comprehension vs new | **1 → 22** method-routes |
+| Walk finds `/api/channels`, `/api/outliers`, `/api/agent/threads`, `/api/harness`, `/api/auth/login` | yes |
+| `DEMO.ask_tools()` `channel_stats.metric` enum | 5 labels, no `SDRatio10_5`, no `Video*` |
+| `CEMEX.ask_tools()` same enum | 9 labels, includes `SDRatio10_5` |
+| Scope-word scan over every tool property, all 3 harnesses | none found |
+| `ask_prompt()` contains `"tenant"`, all 3 harnesses | no |
+| Action space | exactly 5 read tools + `submit_answer` |
+
+## Still open after `v1.0.9`
+
+- **Nothing calls `ask_tools()` yet.** The schemas are correct and unused until
+  the executor lands.
+- **The container image and the host venv now differ.** Tests run on the host;
+  the API container has no pytest. Worth pinning `fastapi` in `pyproject.toml`
+  rather than `>=0.115` — an unpinned minor bump is what silently disarmed the
+  security suite.
+
+---
 
 ## Still open
 

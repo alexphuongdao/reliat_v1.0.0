@@ -42,6 +42,14 @@ class HarnessOut(BaseModel):
     #: generic fallback is in use — worth surfacing, not hiding.
     profiled: bool
 
+    #: The `ask` action space and its ceilings. Names only, not schemas: the
+    #: point is that a customer can see exactly what the agent is permitted to
+    #: do, and that the list is short and entirely read-only.
+    askTools: list[str]
+    maxRounds: int
+    maxInputTokens: int
+    maxCostUsd: float
+
 
 @router.get("", response_model=HarnessOut)
 def current_harness(principal: Principal = Depends(get_principal)) -> HarnessOut:
@@ -61,4 +69,8 @@ def current_harness(principal: Principal = Depends(get_principal)) -> HarnessOut
         failureCategories=[FailureCategoryOut(**c) for c in s["failure_categories"]],
         operatingRules=s["operating_rules"],
         profiled=h.slug != "generic",
+        askTools=s["ask_tools"],
+        maxRounds=s["max_rounds"],
+        maxInputTokens=s["max_input_tokens"],
+        maxCostUsd=s["max_cost_usd"],
     )

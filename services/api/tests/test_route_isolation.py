@@ -15,6 +15,8 @@ from fastapi.routing import APIRoute
 from app.auth import get_principal
 from app.main import app
 
+from ._routes import method_routes
+
 #: Routes that are legitimately reachable without a session, each with the
 #: reason. Anything not listed here must depend on `get_principal`.
 #:
@@ -50,15 +52,11 @@ def _requires_principal(route: APIRoute) -> bool:
 class RouteIsolationTests(unittest.TestCase):
     def test_every_route_requires_a_principal_or_is_explicitly_public(self) -> None:
         unguarded: list[str] = []
-        for route in app.routes:
-            if not isinstance(route, APIRoute):
+        for method, path, route in method_routes(app):
+            if (method, path) in PUBLIC_ROUTES:
                 continue
-            for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
-                key = (method, route.path)
-                if key in PUBLIC_ROUTES:
-                    continue
-                if not _requires_principal(route):
-                    unguarded.append(f"{method} {route.path}")
+            if not _requires_principal(route):
+                unguarded.append(f"{method} {path}")
 
         self.assertEqual(
             unguarded,
@@ -74,14 +72,29 @@ class RouteIsolationTests(unittest.TestCase):
         Otherwise the allowlist slowly becomes a place where a path can be
         pre-approved before it exists.
         """
-        live = {
-            (method, route.path)
-            for route in app.routes
-            if isinstance(route, APIRoute)
-            for method in route.methods - {"HEAD", "OPTIONS"}
-        }
+        live = {(method, path) for method, path, _ in method_routes(app)}
         stale = sorted(f"{m} {p}" for (m, p) in PUBLIC_ROUTES if (m, p) not in live)
         self.assertEqual(stale, [], f"PUBLIC_ROUTES entries with no live route: {stale}")
+
+    def test_the_route_walk_actually_finds_routes(self) -> None:
+        """A tripwire on the enumeration itself.
+
+        FastAPI 0.141 changed `include_router` to leave an opaque wrapper in
+        `app.routes`, and the old `isinstance(route, APIRoute)` filter then
+        matched *nothing*. Both this file and `test_cross_tenant_leak` iterate
+        that list, so the entire isolation suite passed while asserting on an
+        empty set. Caught here only because the stale-allowlist check above
+        happens to fail loudly in that state.
+
+        This makes it explicit instead of incidental: if the walk ever goes
+        quiet again, this fails first and says why.
+        """
+        found = method_routes(app)
+        self.assertGreater(len(found), 20, "route walk returned almost nothing")
+        paths = {p for _, p, _ in found}
+        for expected in ("/api/channels", "/api/outliers", "/api/agent/threads",
+                         "/api/harness", "/api/auth/login"):
+            self.assertIn(expected, paths, f"{expected} missing from the route walk")
 
 
 if __name__ == "__main__":

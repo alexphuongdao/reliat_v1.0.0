@@ -13,7 +13,21 @@ from datetime import datetime, timezone
 
 import pytest
 
-from app.harness import CEMEX, DEMO, GENERIC, harness_for_slug, harness_for_tenant
+from app.harness import (
+    CEMEX,
+    DEMO,
+    GENERIC,
+    MAX_OUTLIER_ROWS,
+    MAX_WINDOW_AFTER,
+    MAX_WINDOW_BEFORE,
+    READ_TOOLS,
+    TOOL_CHANNEL_STATS,
+    TOOL_MEASUREMENT_WINDOW,
+    TOOL_QUERY_OUTLIERS,
+    TOOL_SUBMIT_ANSWER,
+    harness_for_slug,
+    harness_for_tenant,
+)
 from app.models import Measurement, Tenant
 
 #: Columns that only a real vendor instrument reports. A harness that offers
@@ -121,3 +135,116 @@ class TestContextPolicy:
         assert 0 < harness.context.window_before <= 200
         assert 0 <= harness.context.window_after <= 100
         assert 0 < harness.context.max_output_tokens <= 8192
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_ask_loop_budget_is_bounded(self, harness) -> None:
+        """Unbounded is the failure mode that costs money silently. Every
+        dimension the `ask` loop can grow along has a ceiling, per tenant."""
+        assert 0 < harness.context.max_rounds <= 12
+        assert 0 < harness.context.max_input_tokens <= 15_000
+        assert 0 < harness.context.max_cost_usd <= 5.00
+        # Sub-allocations must leave room for the system prompt, tool schemas
+        # and the question, or the builder can satisfy both budgets and still
+        # blow the ceiling.
+        assert (harness.context.history_token_budget
+                + harness.context.tool_result_token_budget
+                < harness.context.max_input_tokens)
+
+
+class TestAskActionSpace:
+    """The `ask` path's tool schemas — what the model is permitted to express."""
+
+    #: Anything that would let a tool call name a scope. The executor adds the
+    #: tenant filter unconditionally, but a field the model can write into is
+    #: a target for injection and an invitation for someone to later "use" it.
+    SCOPE_WORDS = ("tenant", "site_id", "customer", "org", "account", "all_tenants")
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_no_tool_accepts_a_scope_parameter(self, harness) -> None:
+        for tool in harness.ask_tools():
+            props = tool["input_schema"].get("properties", {})
+            for name in props:
+                assert not any(w in name.lower() for w in self.SCOPE_WORDS), (
+                    f"{tool['name']}.{name} lets the model express scope"
+                )
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_action_space_is_exactly_the_five_reads_plus_submit(self, harness) -> None:
+        names = [t["name"] for t in harness.ask_tools()]
+        assert set(names) == READ_TOOLS | {TOOL_SUBMIT_ANSWER}
+        assert len(names) == len(set(names))
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_no_write_tool_is_offered(self, harness) -> None:
+        """The agent reads. Acknowledging, resolving and assigning stay human."""
+        forbidden = ("update", "set_", "delete", "resolve", "acknowledge",
+                     "assign", "dismiss", "create", "ingest", "sql", "query_raw")
+        for name in (t["name"] for t in harness.ask_tools()):
+            assert not any(w in name for w in forbidden), name
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_metric_enum_is_bound_to_this_tenants_columns(self, harness) -> None:
+        stats = next(t for t in harness.ask_tools() if t["name"] == TOOL_CHANNEL_STATS)
+        enum = stats["input_schema"]["properties"]["metric"]["enum"]
+        assert enum == [f.label for f in harness.evidence_fields]
+
+    def test_demo_cannot_even_ask_for_vendor_only_metrics(self) -> None:
+        """Not 'is told not to' — cannot form the call. The value is absent
+        from the enum, so the request is malformed before it is refused."""
+        stats = next(t for t in DEMO.ask_tools() if t["name"] == TOOL_CHANNEL_STATS)
+        enum = set(stats["input_schema"]["properties"]["metric"]["enum"])
+        assert "SDRatio10_5" not in enum
+        assert not any(e.startswith("Video") for e in enum)
+
+        cemex_enum = set(next(
+            t for t in CEMEX.ask_tools() if t["name"] == TOOL_CHANNEL_STATS
+        )["input_schema"]["properties"]["metric"]["enum"])
+        assert "SDRatio10_5" in cemex_enum  # guards against a trivial pass
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_row_caps_are_declared_in_the_schema(self, harness) -> None:
+        """The executor clamps regardless, but declaring the cap means the
+        model asks for a legal number instead of learning by rejection."""
+        q = next(t for t in harness.ask_tools() if t["name"] == TOOL_QUERY_OUTLIERS)
+        assert q["input_schema"]["properties"]["limit"]["maximum"] == MAX_OUTLIER_ROWS
+        w = next(t for t in harness.ask_tools() if t["name"] == TOOL_MEASUREMENT_WINDOW)
+        assert w["input_schema"]["properties"]["before"]["maximum"] == MAX_WINDOW_BEFORE
+        assert w["input_schema"]["properties"]["after"]["maximum"] == MAX_WINDOW_AFTER
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_submit_answer_requires_citations(self, harness) -> None:
+        submit = next(t for t in harness.ask_tools() if t["name"] == TOOL_SUBMIT_ANSWER)
+        assert set(submit["input_schema"]["required"]) == {"answer", "citations"}
+
+
+class TestAskPrompt:
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_ask_prompt_never_names_a_tenant_identifier(self, harness) -> None:
+        """Scope is bound below the model. Mentioning it in the prompt would
+        give an injected instruction something to argue with, and gains
+        nothing — the model cannot act on it either way."""
+        prompt = harness.ask_prompt().lower()
+        for other in (CEMEX, DEMO):
+            if other.slug != harness.slug:
+                assert other.slug not in prompt
+        assert "tenant_id" not in prompt
+        assert "tenant" not in prompt
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_ask_prompt_carries_this_tenants_own_context(self, harness) -> None:
+        prompt = harness.ask_prompt()
+        for f in harness.evidence_fields:
+            assert f.label in prompt
+        for c in harness.failure_categories:
+            assert c.id in prompt
+        assert harness.instrument in prompt
+
+    @pytest.mark.parametrize("harness", [CEMEX, DEMO, GENERIC])
+    def test_ask_prompt_forces_the_terminal_tool(self, harness) -> None:
+        prompt = harness.ask_prompt()
+        assert TOOL_SUBMIT_ANSWER in prompt
+        assert str(harness.context.max_rounds) in prompt
+
+    def test_demo_ask_prompt_offers_no_vendor_evidence(self) -> None:
+        assert "SDRatio10_5" not in DEMO.ask_prompt()
+        assert "SDRatio10_5" in CEMEX.ask_prompt()

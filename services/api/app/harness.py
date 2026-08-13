@@ -87,6 +87,23 @@ class ContextPolicy:
     """How much evidence is assembled, and how it is bounded.
 
     The model never decides what goes in its own context — this does.
+
+    The `ask` path adds four ceilings the diagnosis path does not need. A
+    diagnosis is one call with a window we chose; an ask is a loop the model
+    steers, so every dimension it can grow along needs a stop:
+
+      max_rounds        — how many times it may call a tool before we force
+                          an answer. Bounds latency and the number of calls.
+      max_input_tokens  — the hard context ceiling, measured before send.
+      max_cost_usd      — cumulative spend for one question. A backstop, not
+                          the primary control: rounds and tokens bind first.
+                          This catches the case where they somehow don't.
+      history/result budgets — sub-allocations inside max_input_tokens, so
+                          the builder knows *what* to drop and in what order
+                          rather than truncating whatever is at the end.
+
+    All four are per-tenant because a customer on a bigger contract can be
+    given a longer leash without touching a line of loop code.
     """
 
     window_before: int
@@ -97,9 +114,56 @@ class ContextPolicy:
     #: pointless for a tenant that runs one diagnosis a week.
     cache_system_prompt: bool = True
 
+    # ── the `ask` loop's budget ──
+    max_rounds: int = 6
+    max_input_tokens: int = 15_000
+    max_cost_usd: float = 1.00
+    #: Sub-allocations within `max_input_tokens`. They deliberately do not sum
+    #: to it — system prompt, tool schemas and the question take the rest, and
+    #: leaving headroom is what keeps a long thread from crowding out evidence.
+    history_token_budget: int = 4_000
+    tool_result_token_budget: int = 6_000
+
     @property
     def window_total(self) -> int:
         return self.window_before + self.window_after
+
+
+# ─── the `ask` action space ─────────────────────────────────────────────
+#
+# These live at module scope rather than inside the schema literals because
+# the executor validates against the same names and limits. One definition,
+# read by both the thing that tells the model what it may do and the thing
+# that decides whether to honour a call — a drift between those two is
+# exactly how an over-permissive tool ships unnoticed.
+
+TOOL_LIST_CHANNELS = "list_channels"
+TOOL_QUERY_OUTLIERS = "query_outliers"
+TOOL_MEASUREMENT_WINDOW = "measurement_window"
+TOOL_CHANNEL_STATS = "channel_stats"
+TOOL_GET_DIAGNOSIS = "get_diagnosis"
+TOOL_SUBMIT_ANSWER = "submit_answer"
+
+#: Every tool the `ask` path will execute. A call to anything not in here is
+#: an error returned to the model, never a dispatch.
+READ_TOOLS: frozenset[str] = frozenset({
+    TOOL_LIST_CHANNELS,
+    TOOL_QUERY_OUTLIERS,
+    TOOL_MEASUREMENT_WINDOW,
+    TOOL_CHANNEL_STATS,
+    TOOL_GET_DIAGNOSIS,
+})
+
+#: Hard caps on how much one tool call may return. The model may ask for
+#: less; asking for more is clamped, not refused, so a greedy call degrades
+#: into a smaller answer rather than an error the model has to recover from.
+MAX_OUTLIER_ROWS = 50
+MAX_WINDOW_BEFORE = 40
+MAX_WINDOW_AFTER = 20
+
+SEVERITIES = ("critical", "warn", "info")
+TRIAGE_STATUSES = ("open", "acknowledged", "resolved", "dismissed")
+STATS_WINDOWS = ("1h", "6h", "24h", "7d")
 
 
 @dataclass(frozen=True)
@@ -217,6 +281,289 @@ You MUST respond by calling `submit_diagnosis` exactly once."""
             },
         }
 
+    # ── the `ask` path ──
+
+    def evidence_field(self, label: str) -> EvidenceField | None:
+        """Resolve a model-supplied metric label to a real column.
+
+        The model only ever sees labels — they are what `format_window`
+        prints — so a tool argument arrives as `"F80"`, not `"f80"`. This is
+        also the whitelist: a label absent from this tenant's harness resolves
+        to None and the executor rejects the call, so there is no path from a
+        tool argument to an arbitrary attribute on `Measurement`.
+        """
+        for f in self.evidence_fields:
+            if f.label == label:
+                return f
+        return None
+
+    def ask_prompt(self) -> str:
+        """System block for a free-text question.
+
+        Differs from `system_prompt()` in one structural way: there, the
+        evidence was chosen before the model was called. Here the model has to
+        find it, so the prompt has to describe a *process* — retrieve, then
+        answer, then cite — instead of just a subject.
+
+        What it deliberately does not contain: any tenant identifier, any hint
+        that other tenants exist, or any suggestion that scope is negotiable.
+        The scope is not in the model's reach, so putting it in words would
+        only give an injected instruction something to argue with.
+        """
+        glossary = "\n".join(
+            f"  - {t.name} ({t.unit}): {t.meaning}" for t in self.metric_glossary
+        )
+        categories = "\n".join(
+            f"  - {c.id} — {c.label}: {c.hint}" for c in self.failure_categories
+        )
+        rules = "\n".join(f"- {r}" for r in self.operating_rules)
+        caveats = (
+            "\nData caveats for this site:\n"
+            + "\n".join(f"- {c}" for c in self.data_caveats)
+            if self.data_caveats
+            else ""
+        )
+        available = ", ".join(f.label for f in self.evidence_fields)
+
+        return f"""You are the plant intelligence assistant for {self.label} — {self.domain}.
+
+Instrument: {self.instrument}
+Sampling: {self.sampling}
+
+A person on the plant team has asked you a question. You answer it from this \
+site's own measurement record, using the read tools provided. You have no other \
+source of fact.
+
+Metric glossary for this site:
+{glossary}
+
+Root-cause categories used at this site, when a question touches on cause:
+{categories}
+
+The ONLY measurement columns that exist for this site are: {available}
+No other column exists. If a question asks about something outside this list, \
+say plainly that this site's instrument does not report it.
+{caveats}
+
+Operating rules for this site:
+{rules}
+
+How to work:
+- Retrieve before you answer. Call tools to get the actual rows. Do not answer \
+from memory of earlier turns alone if the question needs fresh numbers.
+- Start broad, then narrow: `{TOOL_LIST_CHANNELS}` to see what exists, \
+`{TOOL_QUERY_OUTLIERS}` to find events, `{TOOL_MEASUREMENT_WINDOW}` to see what \
+surrounded one, `{TOOL_CHANNEL_STATS}` for aggregate behaviour, \
+`{TOOL_GET_DIAGNOSIS}` for work already done on an outlier.
+- You have at most {self.context.max_rounds} tool rounds. Spend them. Do not \
+burn them re-fetching what you already have.
+- Every number in your answer must come from a row a tool returned this turn. \
+Never estimate, interpolate, or carry a number over from your own prior text.
+- If the tools return nothing relevant, say the data does not show it. An honest \
+"no evidence for that in this window" is a correct answer; an invented one is not.
+- Write like an engineer filing a shift-handoff note: short, precise, no filler. \
+No preamble, no restating the question back.
+
+You MUST finish by calling `{TOOL_SUBMIT_ANSWER}` exactly once. Anything you write \
+outside that call is discarded, so put the whole answer inside it. Every id you \
+cite must be one a tool actually returned to you."""
+
+    def ask_tools(self) -> list[dict]:
+        """The read tools plus the terminal answer tool.
+
+        Two properties are load-bearing:
+
+        1. There is no `tenant_id`, `tenant`, `site` or `customer` parameter
+           anywhere in these schemas. Scope is not something the model can
+           express, so a successful prompt injection has no field to write it
+           into — the executor adds the filter regardless of what arrives.
+
+        2. `metric` is enum-bound to *this tenant's* evidence fields. The demo
+           tenant's model cannot even form a call asking for SDRatio10_5,
+           because for that harness the value is not in the enum.
+        """
+        metric_labels = [f.label for f in self.evidence_fields]
+
+        return [
+            {
+                "name": TOOL_LIST_CHANNELS,
+                "description": (
+                    "List the monitored channels available to you, with each "
+                    "channel's learned F80 and Topsize baselines and whether it "
+                    "is currently online. Takes no arguments. Call this first "
+                    "when you do not already know which channel a question is "
+                    "about — channel ids are not guessable."
+                ),
+                "input_schema": {"type": "object", "properties": {}},
+            },
+            {
+                "name": TOOL_QUERY_OUTLIERS,
+                "description": (
+                    "Find detected events, newest first. All filters are "
+                    "optional; with none, returns the most recent events across "
+                    "all channels you can see. Use this to locate what happened "
+                    "before asking for detail about any one event."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "channel_id": {
+                            "type": "string",
+                            "description": (
+                                "Restrict to one channel, as returned by "
+                                f"`{TOOL_LIST_CHANNELS}`."
+                            ),
+                        },
+                        "severity": {"type": "string", "enum": list(SEVERITIES)},
+                        "status": {"type": "string", "enum": list(TRIAGE_STATUSES)},
+                        "since": {
+                            "type": "string",
+                            "description": "ISO-8601 UTC timestamp; only events at or after it.",
+                        },
+                        "until": {
+                            "type": "string",
+                            "description": "ISO-8601 UTC timestamp; only events at or before it.",
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": MAX_OUTLIER_ROWS,
+                            "description": f"Rows to return, at most {MAX_OUTLIER_ROWS}. Default 20.",
+                        },
+                    },
+                },
+            },
+            {
+                "name": TOOL_MEASUREMENT_WINDOW,
+                "description": (
+                    "The raw measurement samples surrounding a moment in time on "
+                    "one channel — the same evidence table a diagnosis is built "
+                    "from. Use it to check what the signal actually did around an "
+                    "event, rather than reasoning from the event row alone."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "channel_id": {"type": "string"},
+                        "around_t": {
+                            "type": "string",
+                            "description": (
+                                "ISO-8601 UTC timestamp to centre on — typically an "
+                                "event's `t` from " f"`{TOOL_QUERY_OUTLIERS}`."
+                            ),
+                        },
+                        "before": {
+                            "type": "integer", "minimum": 1, "maximum": MAX_WINDOW_BEFORE,
+                            "description": f"Samples before, at most {MAX_WINDOW_BEFORE}. "
+                                           f"Default {self.context.window_before}.",
+                        },
+                        "after": {
+                            "type": "integer", "minimum": 0, "maximum": MAX_WINDOW_AFTER,
+                            "description": f"Samples after, at most {MAX_WINDOW_AFTER}. "
+                                           f"Default {self.context.window_after}.",
+                        },
+                    },
+                    "required": ["channel_id", "around_t"],
+                },
+            },
+            {
+                "name": TOOL_CHANNEL_STATS,
+                "description": (
+                    "Summary statistics for one metric on one channel over a "
+                    "recent window: count, mean, standard deviation, min, max, "
+                    "and the channel's learned baseline. Computed in Python from "
+                    "the stored rows, never estimated. Use this for questions "
+                    "about typical or drifting behaviour rather than pulling "
+                    "hundreds of raw samples."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "channel_id": {"type": "string"},
+                        "metric": {
+                            "type": "string",
+                            "enum": metric_labels,
+                            "description": "One of this site's measurement columns.",
+                        },
+                        "window": {"type": "string", "enum": list(STATS_WINDOWS)},
+                    },
+                    "required": ["channel_id", "metric", "window"],
+                },
+            },
+            {
+                "name": TOOL_GET_DIAGNOSIS,
+                "description": (
+                    "The most recent diagnostic artifact for one event, if the "
+                    "Diagnostic Agent has already run on it: root cause, ranked "
+                    "hypotheses with their failure categories, and the recommended "
+                    "check. Prefer citing existing work over re-deriving it."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"outlier_id": {"type": "string"}},
+                    "required": ["outlier_id"],
+                },
+            },
+            {
+                "name": TOOL_SUBMIT_ANSWER,
+                "description": (
+                    "Deliver the final answer. Terminal — the conversation ends "
+                    "here, so this call must contain everything you want the "
+                    "person to read."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "answer": {
+                            "type": "string",
+                            "description": (
+                                "The answer, in plain prose, citing specific numbers "
+                                "from the rows you retrieved."
+                            ),
+                        },
+                        "citations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": ["outlier", "channel", "diagnosis"],
+                                    },
+                                    "id": {
+                                        "type": "string",
+                                        "description": (
+                                            "An id a tool returned to you in this "
+                                            "conversation. Ids you did not receive "
+                                            "are rejected."
+                                        ),
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "description": "What this row supports, in a few words.",
+                                    },
+                                },
+                                "required": ["kind", "id"],
+                            },
+                            "description": (
+                                "The rows this answer rests on. May be empty only if "
+                                "the answer makes no factual claim about the data."
+                            ),
+                        },
+                        "confidence": {
+                            "type": "number", "minimum": 0, "maximum": 1,
+                            "description": (
+                                "Your own confidence in this answer. A self-report, "
+                                "not a calibrated probability — be honest rather "
+                                "than reassuring."
+                            ),
+                        },
+                    },
+                    "required": ["answer", "citations"],
+                },
+            },
+        ]
+
     def format_window(self, window: list[Measurement], event_t) -> str:
         """Render only this tenant's evidence fields. Absent columns never appear."""
         headers = ["t_offset_s"] + [f"{f.label}({f.unit})" if f.unit else f.label
@@ -246,6 +593,12 @@ You MUST respond by calling `submit_diagnosis` exactly once."""
                 {"id": c.id, "label": c.label} for c in self.failure_categories
             ],
             "operating_rules": list(self.operating_rules),
+            # The `ask` action space, so the product can show what the agent is
+            # permitted to do rather than asking anyone to trust a prompt.
+            "ask_tools": [t["name"] for t in self.ask_tools()],
+            "max_rounds": self.context.max_rounds,
+            "max_input_tokens": self.context.max_input_tokens,
+            "max_cost_usd": self.context.max_cost_usd,
         }
 
 
@@ -357,7 +710,10 @@ GENERIC = TenantHarness(
     evidence_fields=PSD_CORE_FIELDS,
     operating_rules=(
         "Never recommend stopping the plant.",
-        "No site profile has been configured for this tenant. State explicitly that "
+        # "site", not "tenant": `tenant` is our word for the boundary, and the
+        # boundary is bound below the model. Naming it in a prompt gives an
+        # injected instruction a concept to argue with and buys nothing.
+        "No site profile has been configured for this site. State explicitly that "
         "the diagnosis is made without site-specific operating context, and keep "
         "confidence correspondingly low.",
     ),

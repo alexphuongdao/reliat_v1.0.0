@@ -44,6 +44,8 @@ from app.models import (
     User,
 )
 
+from ._routes import method_routes
+
 # Routes that legitimately return no tenant-scoped data. Anything else on the
 # app is subject to both checks below.
 NOT_TENANT_SCOPED: set[tuple[str, str]] = {
@@ -233,13 +235,13 @@ class CrossTenantLeakTests(unittest.TestCase):
 
     @staticmethod
     def _routes() -> list[tuple[str, str, APIRoute]]:
-        out: list[tuple[str, str, APIRoute]] = []
-        for route in app.routes:
-            if not isinstance(route, APIRoute):
-                continue
-            for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
-                out.append((method, route.path, route))
-        return out
+        """Every route on the app. See `tests/_routes.py` for why this is not
+        a one-line comprehension over `app.routes` any more."""
+        found = method_routes(app)
+        # The walk going quiet would make every assertion below vacuous, so
+        # refuse to run rather than pass on an empty set.
+        assert len(found) > 20, f"route walk returned only {len(found)} routes"
+        return found
 
     @staticmethod
     def _fill(path: str, which: int) -> str:
