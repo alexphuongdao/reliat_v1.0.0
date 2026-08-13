@@ -71,7 +71,7 @@ class Component extends DCLogic {
     this.NS = 7;
 
     if (this.mineVideo) {
-      this.mineVideo.loop = true;
+      this.mineVideo.loop = false;
       this.mineVideo.muted = true;
       this.mineVideo.defaultMuted = true;
       this.mineVideo.playsInline = true;
@@ -128,12 +128,7 @@ class Component extends DCLogic {
 
   onScroll() {
     this.updateMine();
-    if (this.mode === 'sequence') {
-      const total = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      if (this.progress) this.progress.style.width = (this.clamp(window.scrollY / total, 0, 1) * 100) + '%';
-    } else {
-      this.target = this.computeP();
-    }
+    if (this.mode !== 'sequence') this.target = this.computeP();
   }
 
   computeMineP() {
@@ -152,7 +147,7 @@ class Component extends DCLogic {
       this.minePin.style.visibility = 'visible';
     } else {
       this.minePin.style.position = 'fixed';
-      this.minePin.style.visibility = 'visible';
+      this.minePin.style.visibility = mineRect.top <= 0 && mineRect.bottom > 0 ? 'visible' : 'hidden';
     }
     if (this.pin) {
       if (this.mode === 'sequence') {
@@ -164,7 +159,7 @@ class Component extends DCLogic {
     }
     const copyO = 1 - this.ss(this.norm(p, 0.08, 0.46));
     const scrollO = 1 - this.ss(this.norm(p, 0.015, 0.18));
-    const veilO = this.ss(this.norm(p, 0.62, 0.98));
+    const veilO = this.ss(this.norm(p, 0.72, 0.995));
     if (this.mineCopy) {
       this.mineCopy.style.opacity = copyO;
       const y = this.vw < 600 ? (1 - copyO) * 14 : -46 + (1 - copyO) * 3;
@@ -173,8 +168,8 @@ class Component extends DCLogic {
         : 'translateY(' + y + '%)';
     }
     if (this.mineScroll) this.mineScroll.style.opacity = scrollO;
-    if (this.mineShade) this.mineShade.style.opacity = this.lerp(1, 0.76, this.ss(this.norm(p, 0.22, 0.68)));
-    if (this.mineTransition) this.mineTransition.style.opacity = veilO * 0.92;
+    if (this.mineShade) this.mineShade.style.opacity = this.lerp(1, 0.58, this.ss(this.norm(p, 0.22, 0.68)));
+    if (this.mineTransition) this.mineTransition.style.opacity = veilO;
     this.mineVideo.style.transform = 'scale(1.002)';
   }
 
@@ -185,13 +180,12 @@ class Component extends DCLogic {
     this.canvas.width = this.vw * dpr;
     this.canvas.height = this.vh * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const seq = true;
+    const seq = this.vw < 900 || this.prefersReducedMotion;
     if (this.mineTrack && this.minePin) {
       this.mineTrack.style.height = '100vh';
       this.minePin.style.position = this.prefersReducedMotion ? 'relative' : 'fixed';
     }
     this.setMode(seq ? 'sequence' : 'cinematic');
-    this.onScroll();
     this.target = this.computeP();
     this.p = this.target;
     if (this.mode === 'cinematic') this.applyCinematic();
@@ -215,7 +209,6 @@ class Component extends DCLogic {
       this.world.style.transform = 'none';
       this.canvas.style.display = 'none';
       this.chip.style.display = 'none';
-      (this.beltVideos || []).forEach(video => video.pause());
       this.beltSvgHost.style.display = 'none';
       this.sizeSvgHost.style.display = 'block';
       this.sizeSvgHost.style.position = 'relative';
@@ -242,8 +235,8 @@ class Component extends DCLogic {
         s.style.flex = 'none';
         s.style.width = '100%';
         s.style.height = 'auto';
-        s.style.minHeight = '100svh';
-        s.style.padding = '96px 7vw';
+        s.style.minHeight = i === 1 ? '100svh' : 'auto';
+        s.style.padding = '84px 7vw 84px';
         s.style.borderBottom = '1px solid rgba(175,211,198,.14)';
       });
       this.copies.forEach(c => { c.setAttribute('style', c._css + ';position:relative;left:auto;right:auto;top:auto;bottom:auto;inset:auto;opacity:1;transform:none;background:transparent;margin-bottom:18px'); });
@@ -275,8 +268,9 @@ class Component extends DCLogic {
       this.pin.style.overflow = 'hidden';
       this.world.style.display = 'flex';
       this.world.style.position = 'absolute';
-      this.world.style.height = '100%';
-      this.world.style.width = '';
+      this.world.style.height = (this.NS * 100) + 'vh';
+      this.world.style.width = '100%';
+      this.world.style.flexDirection = 'column';
       this.world.style.transition = 'none';
       this.copies.forEach(c => { c.setAttribute('style', c._css + ';transition:none'); });
       this.evs.forEach(e => { e.style.transition = 'none'; });
@@ -302,8 +296,8 @@ class Component extends DCLogic {
       this.finalScene.style.gap = '';
       this.qa('[data-scene]').forEach(s => {
         s.style.display = '';
-        s.style.flex = '0 0 100vw';
-        s.style.width = '';
+        s.style.flex = '0 0 100vh';
+        s.style.width = '100%';
         s.style.height = '100vh';
         s.style.minHeight = '';
         s.style.padding = s.dataset.scene === '3' || s.dataset.scene === '4' ? '0 7vw' : s.dataset.scene === '5' ? '0 5vw' : s.dataset.scene === '6' ? '0 6vw' : s.dataset.scene === '0' ? '0 8vw' : '0';
@@ -601,22 +595,16 @@ class Component extends DCLogic {
     const p = this.p, vw = this.vw, vh = this.vh;
     const camIndex = this.kf(p, [[0, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.825, 5], [0.945, 5], [0.958, 6], [1, 6]]);
     this.ctx.clearRect(0, 0, vw, vh);
-    // Let the conveyor begin inside the hero's open right side, then use the
-    // existing camera move to carry that same belt into the detection scene.
-    // On narrower cinematic viewports it starts farther right to protect copy.
-    const heroBeltOffset = vw < 1200 ? 0.72 : 0.58;
-    const beltX = camIndex <= 1
-      ? (1 - camIndex) * vw * heroBeltOffset
-      : (1 - camIndex) * vw;
-    if (beltX > -vw && beltX < vw) this.drawBelt(beltX, this.norm(p, 0.14, 0.235));
-    const anX = (2 - camIndex) * vw;
-    if (anX > -vw && anX < vw) this.drawAnalysis(anX, this.ss(this.norm(p, 0.285, 0.375)), this.ss(this.norm(p, 0.375, 0.44)), this.ss(this.norm(p, 0.44, 0.49)));
+    const beltY = (1 - camIndex) * vh;
+    if (beltY > -vh && beltY < vh) this.drawBelt(beltY, this.norm(p, 0.14, 0.235));
+    const anY = (2 - camIndex) * vh;
+    if (anY > -vh && anY < vh) this.drawAnalysis(anY, this.ss(this.norm(p, 0.285, 0.375)), this.ss(this.norm(p, 0.375, 0.44)), this.ss(this.norm(p, 0.44, 0.49)));
   }
 
   applyCinematic() {
     const p = this.p, vw = this.vw, vh = this.vh;
     const camIndex = this.kf(p, [[0, 1], [0.24, 1], [0.28, 2], [0.52, 2], [0.56, 3], [0.66, 3], [0.70, 4], [0.80, 4], [0.825, 5], [0.945, 5], [0.958, 6], [1, 6]]);
-    this.world.style.transform = 'translateX(' + (-camIndex * vw) + 'px)';
+    this.world.style.transform = 'translateY(' + (-camIndex * vh) + 'px)';
     if (this.progress) this.progress.style.width = (p * 100) + '%';
 
     // copy windows
@@ -666,10 +654,10 @@ class Component extends DCLogic {
     this.chip.style.transform = 'translate(-50%,-50%) scale(' + this.lerp(0.9, 1, chipO) + ')';
   }
 
-  drawBelt(sx, gradationT) {
+  drawBelt(sy, gradationT) {
     const ctx = this.ctx, vw = this.vw, vh = this.vh;
     ctx.save();
-    ctx.translate(sx, 0);
+    ctx.translate(0, sy);
     // Relative-size rings travel with the footage to make gradation legible
     // without implying that the pilot is already performing optical sizing.
     const reveal = this.ss(this.clamp(gradationT * 2.8, 0, 1));
@@ -717,7 +705,7 @@ class Component extends DCLogic {
     ctx.restore();
   }
 
-  drawAnalysis(sx, resolveT, anomalyT, pushT) {
+  drawAnalysis(sy, resolveT, anomalyT, pushT) {
     const ctx = this.ctx, vw = this.vw, vh = this.vh;
     const ml = vw * 0.42, mr = vw * 0.10, mt = vh * 0.30, mb = vh * 0.20;
     const pw = vw - ml - mr, ph = vh - mt - mb;
@@ -730,7 +718,7 @@ class Component extends DCLogic {
     const anomCy = mt + ph * 0.55;
 
     ctx.save();
-    ctx.translate(sx, 0);
+    ctx.translate(0, sy);
     if (pushT > 0) {
       const s = 1 + pushT * 0.5;
       ctx.translate(anomCx, anomCy); ctx.scale(s, s); ctx.translate(-anomCx, -anomCy);
